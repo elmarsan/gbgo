@@ -56,3 +56,7 @@ func (cpu *CPU) nextPC16() uint16 {
 	b2 := cpu.nextPC8()
 	return uint16(b2<<8) | uint16(b1)
 }
+
+func (cpu *CPU) incReg(r register) {
+
+}
