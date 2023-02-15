@@ -1,14 +1,16 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"os"
+	"strings"
 )
 
 type CartridgeHeader struct {
 	entry          [4]uint8
 	logo           [0x30]uint8
-	title          [16]rune
+	title          string
 	licenseCode    uint16
 	cgbFlag        uint8
 	catridgeType   uint8
@@ -150,6 +152,13 @@ func (c *Cartridge) Load(p string) error {
 
 	c.size = uint32(len(d))
 	c.data = d
+
+	c.header = &CartridgeHeader{}
+
+	b := bytes.NewBuffer(d)
+
+	title := string(b.Bytes()[0x135:0x143])
+	c.header.title = strings.Trim(title, "\x00")
 
 	var checksum uint8 = 0x00
 	for address := uint16(0x0134); address <= 0x014C; address++ {
