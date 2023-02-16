@@ -42,21 +42,3 @@ type CPU struct {
 
 	memory [16384]uint8
 }
-
-// nextPC8 returns next 8bit val of pc and increment it.
-func (cpu *CPU) nextPC8() uint8 {
-	opcode := cpu.memory[cpu.pc]
-	cpu.pc++
-	return opcode
-}
-
-// nextPC16 returns next 16bit val of pc.
-func (cpu *CPU) nextPC16() uint16 {
-	b1 := cpu.nextPC8()
-	b2 := cpu.nextPC8()
-	return uint16(b2<<8) | uint16(b1)
-}
-
-func (cpu *CPU) incReg(r register) {
-
-}
