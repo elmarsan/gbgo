@@ -69,73 +69,250 @@ var instructions = [0x100]func(){
 	0x3e: func() {}, // LD A, d8
 	0x3f: func() {}, // CCF
 
-	0x40: func() {},
-	0x41: func() {}, // LD B, C
-	0x42: func() {}, // LD B, E
-	0x43: func() {}, // LD B, E
-	0x44: func() {}, // LD B, H
-	0x45: func() {}, // LD B, L
-	0x46: func() {}, // LD B, HL
-	0x47: func() {},
-	0x48: func() {},
-	0x49: func() {},
-	0x4a: func() {},
-	0x4b: func() {},
-	0x4c: func() {},
-	0x4d: func() {},
-	0x4e: func() {},
-	0x4f: func() {},
+	0x40: func() {
+		// LD B, B
+		cpu.load8Reg(REG_B, REG_B)
+	},
+	0x41: func() {
+		// LD B, C
+		cpu.load8Reg(REG_B, REG_C)
+	},
+	0x42: func() {
+		// LD B, D
+		cpu.load8Reg(REG_B, REG_D)
+	},
+	0x43: func() {
+		// LD B, E
+		cpu.load8Reg(REG_B, REG_E)
+	},
+	0x44: func() {
+		// LD B, H
+		cpu.load8Reg(REG_B, REG_H)
+	},
+	0x45: func() {
+		// LD B, L
+		cpu.load8Reg(REG_B, REG_L)
+	},
+	0x46: func() {
+		// LD B, HL
+	},
+	0x47: func() {
+		// LD B, A
+		cpu.load8Reg(REG_B, REG_A)
+	},
+	0x48: func() {
+		// LD C, B
+		cpu.load8Reg(REG_C, REG_B)
+	},
+	0x49: func() {
+		// LD C, C
+		cpu.load8Reg(REG_C, REG_C)
+	},
+	0x4a: func() {
+		// LD C, D
+		cpu.load8Reg(REG_C, REG_D)
+	},
+	0x4b: func() {
+		// LD C, E
+		cpu.load8Reg(REG_C, REG_E)
+	},
+	0x4c: func() {
+		// LD C, H
+		cpu.load8Reg(REG_C, REG_H)
+	},
+	0x4d: func() {
+		// LD C, L
+		cpu.load8Reg(REG_C, REG_L)
+	},
+	0x4e: func() {
+		// LD C, (HL)
+	},
+	0x4f: func() {
+		// LD C, A
+		cpu.load8Reg(REG_C, REG_A)
+	},
 
-	0x50: func() {},
-	0x51: func() {},
-	0x52: func() {},
-	0x53: func() {},
-	0x54: func() {},
-	0x55: func() {},
-	0x56: func() {},
-	0x57: func() {},
-	0x58: func() {},
-	0x59: func() {},
-	0x5a: func() {},
-	0x5b: func() {},
-	0x5c: func() {},
-	0x5d: func() {},
-	0x5e: func() {},
-	0x5f: func() {},
+	0x50: func() {
+		// LD D, B
+		cpu.load8Reg(REG_D, REG_B)
+	},
+	0x51: func() {
+		// LD D, C
+		cpu.load8Reg(REG_D, REG_C)
+	},
+	0x52: func() {
+		// LD D, D
+		cpu.load8Reg(REG_D, REG_D)
+	},
+	0x53: func() {
+		// LD D, E
+		cpu.load8Reg(REG_D, REG_E)
+	},
+	0x54: func() {
+		// LD D, H
+		cpu.load8Reg(REG_D, REG_H)
+	},
+	0x55: func() {
+		// LD D, L
+		cpu.load8Reg(REG_D, REG_L)
+	},
+	0x56: func() {
+		// LD D, HL
+	},
+	0x57: func() {
+		// LD D, A
+		cpu.load8Reg(REG_D, REG_A)
+	},
+	0x58: func() {
+		// LD E, B
+		cpu.load8Reg(REG_E, REG_B)
+	},
+	0x59: func() {
+		// LD E, C
+		cpu.load8Reg(REG_E, REG_C)
+	},
+	0x5a: func() {
+		// LD E, D
+		cpu.load8Reg(REG_E, REG_D)
+	},
+	0x5b: func() {
+		// LD E, E
+		cpu.load8Reg(REG_E, REG_E)
+	},
+	0x5c: func() {
+		// LD E, H
+		cpu.load8Reg(REG_E, REG_H)
+	},
+	0x5d: func() {
+		// LD E, L
+		cpu.load8Reg(REG_E, REG_L)
+	},
+	0x5e: func() {
+		// LD E, HL
+	},
+	0x5f: func() {
+		// LD E, A
+		cpu.load8Reg(REG_E, REG_A)
+	},
 
-	0x60: func() {},
-	0x61: func() {},
-	0x62: func() {},
-	0x63: func() {},
-	0x64: func() {},
-	0x65: func() {},
-	0x66: func() {},
-	0x67: func() {},
-	0x68: func() {},
-	0x69: func() {},
-	0x6a: func() {},
-	0x6b: func() {},
-	0x6c: func() {},
-	0x6d: func() {},
-	0x6e: func() {},
-	0x6f: func() {},
+	0x60: func() {
+		// LD H, B
+		cpu.load8Reg(REG_H, REG_B)
+	},
+	0x61: func() {
+		// LD H, C
+		cpu.load8Reg(REG_H, REG_C)
+	},
+	0x62: func() {
+		// LD H, D
+		cpu.load8Reg(REG_H, REG_D)
+	},
+	0x63: func() {
+		// LD H, E
+		cpu.load8Reg(REG_H, REG_E)
+	},
+	0x64: func() {
+		// LD H, H
+		cpu.load8Reg(REG_H, REG_H)
+	},
+	0x65: func() {
+		// LD H, L
+		cpu.load8Reg(REG_H, REG_L)
+	},
+	0x66: func() {
+		// LD H, (HL)
+	},
+	0x67: func() {
+		// LD H, A
+		cpu.load8Reg(REG_H, REG_A)
+	},
+	0x68: func() {
+		// LD L, B
+		cpu.load8Reg(REG_L, REG_B)
+	},
+	0x69: func() {
+		// LD L, C
+		cpu.load8Reg(REG_L, REG_C)
+	},
+	0x6a: func() {
+		// LD L, D
+		cpu.load8Reg(REG_L, REG_D)
+	},
+	0x6b: func() {
+		// LD L, E
+		cpu.load8Reg(REG_L, REG_E)
+	},
+	0x6c: func() {
+		// LD L, H
+		cpu.load8Reg(REG_L, REG_H)
+	},
+	0x6d: func() {
+		// LD L, L
+		cpu.load8Reg(REG_L, REG_L)
+	},
+	0x6e: func() {
+		// LD L, (HL)
+	},
+	0x6f: func() {
+		// LD L, A
+		cpu.load8Reg(REG_L, REG_A)
+	},
 
-	0x70: func() {},
-	0x71: func() {},
-	0x72: func() {},
-	0x73: func() {},
-	0x74: func() {},
-	0x75: func() {},
-	0x76: func() {},
-	0x77: func() {},
-	0x78: func() {},
-	0x79: func() {},
-	0x7a: func() {},
-	0x7b: func() {},
-	0x7c: func() {},
-	0x7d: func() {},
-	0x7e: func() {},
-	0x7f: func() {},
+	0x70: func() {
+		// LD (HL), B
+	},
+	0x71: func() {
+		// LD (HL), C
+	},
+	0x72: func() {
+		// LD (HL), D
+	},
+	0x73: func() {
+		// LD (HL), E
+	},
+	0x74: func() {
+		// LD (HL), H
+	},
+	0x75: func() {
+		// LD (HL), L
+	},
+	0x76: func() {
+		// HALT
+	},
+	0x77: func() {
+		// LD (HL), A
+	},
+	0x78: func() {
+		// LD A, B
+		cpu.load8Reg(REG_A, REG_B)
+	},
+	0x79: func() {
+		// LD A, C
+		cpu.load8Reg(REG_A, REG_C)
+	},
+	0x7a: func() {
+		// LD A, D
+		cpu.load8Reg(REG_A, REG_D)
+	},
+	0x7b: func() {
+		// LD A, E
+		cpu.load8Reg(REG_A, REG_E)
+	},
+	0x7c: func() {
+		// LD A, H
+		cpu.load8Reg(REG_A, REG_H)
+	},
+	0x7d: func() {
+		// LD A, L
+		cpu.load8Reg(REG_A, REG_L)
+	},
+	0x7e: func() {
+		// LD A, (HL)
+	},
+	0x7f: func() {
+		// LD A, A
+		cpu.load8Reg(REG_A, REG_A)
+	},
 
 	0x80: func() {},
 	0x81: func() {},

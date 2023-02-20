@@ -155,3 +155,9 @@ func (cpu *CPU) set16Reg(reg CPU16Register, val uint16) {
 		break
 	}
 }
+
+// load8Reg loads value of src 8 bits register into dst 98 bits register.
+func (cpu *CPU) load8Reg(dst CPU8Register, src CPU8Register) {
+	var val uint8 = cpu.read8Reg(src)
+	cpu.set8Reg(dst, val)
+}
