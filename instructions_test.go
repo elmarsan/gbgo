@@ -2,6 +2,40 @@ package main
 
 import "testing"
 
+func Test0x0(t *testing.T) {
+	t.Run("0x02: LD (BC), A", func(t *testing.T) {
+		t.Skip()
+	})
+
+	t.Run("0x06: LD B, d8", func(t *testing.T) {
+		t.Skip()
+	})
+
+	t.Run("0x0a: LD A, (BC)", func(t *testing.T) {
+		t.Skip()
+	})
+
+	t.Run("0x0e: LD C, d8", func(t *testing.T) {
+		t.Skip()
+	})
+}
+
+func Test0x1(t *testing.T) {
+	t.Run("0x12: LD (DE), A", func(t *testing.T) {
+		t.Skip()
+	})
+
+	t.Run("0x16: LD D, d8", func(t *testing.T) {
+		t.Skip()
+	})
+}
+
+func Test0x2(t *testing.T) {
+	t.Run("0x26: LD H, d8", func(t *testing.T) {
+		t.Skip()
+	})
+}
+
 func Test0x4(t *testing.T) {
 	t.Run("0x40: LD B, B", func(t *testing.T) {
 		var val uint8 = 0xab

@@ -3,28 +3,54 @@ package main
 var instructions = [0x100]func(){
 	0x00: func() {}, // NOP
 	0x01: func() {}, // LD BC, d16
-	0x02: func() {}, // LD (BC), A
+	0x02: func() {
+		// LD (BC), A
+		addr := cpu.read16Reg(REG_BC)
+		memory.write(addr, cpu.read8Reg(REG_A))
+	},
 	0x03: func() {}, // INC BC
 	0x04: func() {}, // INC BW
 	0x05: func() {}, // DEC B
-	0x06: func() {}, // LD B, d8
+	0x06: func() {
+		// LD B, d8
+		val := memory.read(cpu.pc)
+		cpu.set8Reg(REG_B, val)
+		cpu.incPc()
+	},
 	0x07: func() {}, // RLCA
 	0x08: func() {}, // LD (a16), SP
 	0x09: func() {}, // ADD HL, BC
-	0x0a: func() {}, // LD A, (BC)
+	0x0a: func() {
+		// LD A, (BC)
+		val := memory.read(cpu.read16Reg(REG_BC))
+		cpu.set8Reg(REG_A, val)
+	},
 	0x0b: func() {}, // DEC BC
 	0x0c: func() {}, // INC C
 	0x0d: func() {}, // DEC C
-	0x0e: func() {}, // LD C, d8
+	0x0e: func() {
+		// LD C, d8
+		cpu.set8Reg(REG_C, memory.read(cpu.pc))
+		cpu.incPc()
+	},
 	0x0f: func() {}, // RRCA
 
 	0x10: func() {}, // STOP d8
 	0x11: func() {}, // LD DE, d16
-	0x12: func() {}, // LD (DE), A
+	0x12: func() {
+		// LD (DE), A
+		addr := cpu.read16Reg(REG_DE)
+		val := cpu.read8Reg(REG_A)
+		memory.write(addr, val)
+	},
 	0x13: func() {}, // INC DE
 	0x14: func() {}, // INC D
 	0x15: func() {}, // DEC D
-	0x16: func() {}, // LD D, d8
+	0x16: func() {
+		// LD D, d8
+		cpu.set8Reg(REG_D, memory.read(cpu.pc))
+		cpu.incPc()
+	},
 	0x17: func() {}, // RLA
 	0x18: func() {}, // JR r8
 	0x19: func() {}, // ADD HL, DE
@@ -41,7 +67,11 @@ var instructions = [0x100]func(){
 	0x23: func() {}, // INC HL
 	0x24: func() {}, // INC H
 	0x25: func() {}, // DEC H
-	0x26: func() {}, // LD H, d8
+	0x26: func() {
+		// LD H, d8
+		cpu.set8Reg(REG_H, memory.read(cpu.pc))
+		cpu.incPc()
+	},
 	0x27: func() {}, // DAA
 	0x28: func() {}, // JR Z, r8
 	0x29: func() {}, // ADD HL, HL
@@ -95,6 +125,8 @@ var instructions = [0x100]func(){
 	},
 	0x46: func() {
 		// LD B, HL
+		val := memory.read(cpu.read16Reg(REG_HL))
+		cpu.set8Reg(REG_B, val)
 	},
 	0x47: func() {
 		// LD B, A
@@ -126,6 +158,8 @@ var instructions = [0x100]func(){
 	},
 	0x4e: func() {
 		// LD C, (HL)
+		val := memory.read(cpu.read16Reg(REG_HL))
+		cpu.set8Reg(REG_C, val)
 	},
 	0x4f: func() {
 		// LD C, A
@@ -158,6 +192,8 @@ var instructions = [0x100]func(){
 	},
 	0x56: func() {
 		// LD D, HL
+		val := memory.read(cpu.read16Reg(REG_HL))
+		cpu.set8Reg(REG_D, val)
 	},
 	0x57: func() {
 		// LD D, A
@@ -189,6 +225,8 @@ var instructions = [0x100]func(){
 	},
 	0x5e: func() {
 		// LD E, HL
+		val := memory.read(cpu.read16Reg(REG_HL))
+		cpu.set8Reg(REG_E, val)
 	},
 	0x5f: func() {
 		// LD E, A
@@ -221,6 +259,8 @@ var instructions = [0x100]func(){
 	},
 	0x66: func() {
 		// LD H, (HL)
+		val := memory.read(cpu.read16Reg(REG_HL))
+		cpu.set8Reg(REG_H, val)
 	},
 	0x67: func() {
 		// LD H, A
@@ -252,6 +292,8 @@ var instructions = [0x100]func(){
 	},
 	0x6e: func() {
 		// LD L, (HL)
+		val := memory.read(cpu.read16Reg(REG_HL))
+		cpu.set8Reg(REG_L, val)
 	},
 	0x6f: func() {
 		// LD L, A
@@ -260,27 +302,41 @@ var instructions = [0x100]func(){
 
 	0x70: func() {
 		// LD (HL), B
+		addr := cpu.read16Reg(REG_HL)
+		memory.write(addr, cpu.read8Reg(REG_B))
 	},
 	0x71: func() {
 		// LD (HL), C
+		addr := cpu.read16Reg(REG_HL)
+		memory.write(addr, cpu.read8Reg(REG_C))
 	},
 	0x72: func() {
 		// LD (HL), D
+		addr := cpu.read16Reg(REG_HL)
+		memory.write(addr, cpu.read8Reg(REG_D))
 	},
 	0x73: func() {
 		// LD (HL), E
+		addr := cpu.read16Reg(REG_HL)
+		memory.write(addr, cpu.read8Reg(REG_E))
 	},
 	0x74: func() {
 		// LD (HL), H
+		addr := cpu.read16Reg(REG_HL)
+		memory.write(addr, cpu.read8Reg(REG_H))
 	},
 	0x75: func() {
 		// LD (HL), L
+		addr := cpu.read16Reg(REG_HL)
+		memory.write(addr, cpu.read8Reg(REG_L))
 	},
 	0x76: func() {
 		// HALT
 	},
 	0x77: func() {
 		// LD (HL), A
+		addr := cpu.read16Reg(REG_HL)
+		memory.write(addr, cpu.read8Reg(REG_A))
 	},
 	0x78: func() {
 		// LD A, B
@@ -308,6 +364,8 @@ var instructions = [0x100]func(){
 	},
 	0x7e: func() {
 		// LD A, (HL)
+		val := memory.read(cpu.read16Reg(REG_HL))
+		cpu.set8Reg(REG_A, val)
 	},
 	0x7f: func() {
 		// LD A, A

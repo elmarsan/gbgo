@@ -45,7 +45,7 @@ var cpu = &CPU{
 
 // cycle executes next instruction.
 func (cpu *CPU) cycle() {
-	opcode := read(cpu.pc)
+	opcode := memory.read(cpu.pc)
 	log.Printf("Executing opcode 0x%x", opcode)
 	instructions[opcode]()
 	cpu.incPc()
