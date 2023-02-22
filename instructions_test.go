@@ -31,7 +31,20 @@ func Test0x1(t *testing.T) {
 }
 
 func Test0x2(t *testing.T) {
+	t.Run("0x2a: LD A, (HL+)", func(t *testing.T) {
+		t.Skip()
+	})
+
 	t.Run("0x26: LD H, d8", func(t *testing.T) {
+		t.Skip()
+	})
+}
+
+func Test0x3(t *testing.T) {
+	t.Run("0x32: LD (HL-), A", func(t *testing.T) {
+		t.Skip()
+	})
+	t.Run("0x36: LD (HL), d8", func(t *testing.T) {
 		t.Skip()
 	})
 }

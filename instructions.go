@@ -13,9 +13,9 @@ var instructions = [0x100]func(){
 	0x05: func() {}, // DEC B
 	0x06: func() {
 		// LD B, d8
+		cpu.incPc()
 		val := memory.read(cpu.pc)
 		cpu.set8Reg(REG_B, val)
-		cpu.incPc()
 	},
 	0x07: func() {}, // RLCA
 	0x08: func() {}, // LD (a16), SP
@@ -30,8 +30,8 @@ var instructions = [0x100]func(){
 	0x0d: func() {}, // DEC C
 	0x0e: func() {
 		// LD C, d8
-		cpu.set8Reg(REG_C, memory.read(cpu.pc))
 		cpu.incPc()
+		cpu.set8Reg(REG_C, memory.read(cpu.pc))
 	},
 	0x0f: func() {}, // RRCA
 
@@ -48,8 +48,8 @@ var instructions = [0x100]func(){
 	0x15: func() {}, // DEC D
 	0x16: func() {
 		// LD D, d8
-		cpu.set8Reg(REG_D, memory.read(cpu.pc))
 		cpu.incPc()
+		cpu.set8Reg(REG_D, memory.read(cpu.pc))
 	},
 	0x17: func() {}, // RLA
 	0x18: func() {}, // JR r8
@@ -63,19 +63,30 @@ var instructions = [0x100]func(){
 
 	0x20: func() {}, // JR NZ, r8
 	0x21: func() {}, // LD HL, d16
-	0x22: func() {}, // LD (HL+), A
+	0x22: func() {
+		// LD (HL+), A
+		addr := cpu.read16Reg(REG_HL)
+		val := cpu.read8Reg(REG_A)
+		memory.write(addr, val)
+		cpu.set16Reg(REG_HL, addr+1)
+	},
 	0x23: func() {}, // INC HL
 	0x24: func() {}, // INC H
 	0x25: func() {}, // DEC H
 	0x26: func() {
 		// LD H, d8
-		cpu.set8Reg(REG_H, memory.read(cpu.pc))
 		cpu.incPc()
+		cpu.set8Reg(REG_H, memory.read(cpu.pc))
 	},
 	0x27: func() {}, // DAA
 	0x28: func() {}, // JR Z, r8
 	0x29: func() {}, // ADD HL, HL
-	0x2a: func() {}, // LD A, (HL+)
+	0x2a: func() {
+		// LD A, (HL+)
+		val := memory.read(cpu.read16Reg(REG_HL))
+		cpu.set8Reg(REG_A, val)
+		cpu.set16Reg(REG_HL, cpu.read16Reg(REG_HL)+1)
+	},
 	0x2b: func() {}, // DEC HL
 	0x2c: func() {}, // INC L
 	0x2d: func() {}, // DEC L
@@ -84,11 +95,23 @@ var instructions = [0x100]func(){
 
 	0x30: func() {}, // JR NC, r8
 	0x31: func() {}, // LD SP, d16
-	0x32: func() {}, // LD (HL-), A
+	0x32: func() {
+		// LD (HL-), A
+		addr := cpu.read16Reg(REG_HL)
+		val := cpu.read8Reg(REG_A)
+		memory.write(addr, val)
+		cpu.set16Reg(REG_HL, addr-1)
+	},
 	0x33: func() {}, // INC SP
 	0x34: func() {}, // INC (HL)
 	0x35: func() {}, // DEC (HL)
-	0x36: func() {}, // LD (HL), d8
+	0x36: func() {
+		// LD (HL), d8
+		cpu.incPc()
+		addr := cpu.read16Reg(REG_HL)
+		val := memory.read(cpu.pc)
+		memory.write(addr, val)
+	},
 	0x37: func() {}, // SCF
 	0x38: func() {}, // JR C, r8
 	0x39: func() {}, // ADD HL, SP
