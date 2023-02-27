@@ -5,7 +5,7 @@ import "log"
 // CPU represents gameboy central processing unit.
 type CPU struct {
 	a uint8
-	// f uint8
+	f uint8
 	b uint8
 	c uint8
 	d uint8
@@ -180,13 +180,7 @@ func (cpu *CPU) inc8Reg(reg CPU8Register) {
 
 	cpu.set8Reg(reg, val)
 
-	// Zero flag
-	if val == 0 {
-		cpu.zFlag = true
-	} else {
-		cpu.zFlag = false
-	}
-
+	cpu.zFlag = val == 0
 	cpu.nFlag = false
 	cpu.hFlag = (val & 0x0f) == 0
 }
