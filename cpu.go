@@ -5,7 +5,7 @@ import "log"
 // CPU represents gameboy central processing unit.
 type CPU struct {
 	a uint8
-	f uint8
+	// f uint8
 	b uint8
 	c uint8
 	d uint8
@@ -15,28 +15,37 @@ type CPU struct {
 
 	sp uint16
 	pc uint16
+
+	zFlag bool
+	nFlag bool
+	hFlag bool
+	cFlag bool
 }
 
 // CPU8Register represents 8 bit register.
-type CPU8Register string
+type CPU8Register int
+
+// 8 bits registers
+const (
+	REG_A CPU8Register = iota
+	REG_F
+	REG_B
+	REG_C
+	REG_D
+	REG_E
+	REG_H
+	REG_L
+)
 
 // CPU16Register represents 16 bit register.
-type CPU16Register string
+type CPU16Register int
 
+// 16 bits registers
 const (
-	REG_A CPU8Register = "REG_A"
-	REG_F CPU8Register = "REG_F"
-	REG_B CPU8Register = "REG_B"
-	REG_C CPU8Register = "REG_C"
-	REG_D CPU8Register = "REG_D"
-	REG_E CPU8Register = "REG_E"
-	REG_H CPU8Register = "REG_H"
-	REG_L CPU8Register = "REG_L"
-
-	REG_AF CPU16Register = "REG_AF"
-	REG_BC CPU16Register = "REG_BC"
-	REG_DE CPU16Register = "REG_DE"
-	REG_HL CPU16Register = "REG_HL"
+	REG_AF = iota
+	REG_BC
+	REG_DE
+	REG_HL
 )
 
 var cpu = &CPU{
@@ -45,15 +54,17 @@ var cpu = &CPU{
 
 // cycle executes next instruction.
 func (cpu *CPU) cycle() {
-	opcode := memory.read(cpu.pc)
+	opcode := memory.read(cpu.readPc())
 	log.Printf("Executing opcode 0x%x", opcode)
 	instructions[opcode]()
-	cpu.incPc()
 }
 
-// incPc increments pc.
-func (cpu *CPU) incPc() {
+// readPc returns current value of pc and increments it.
+func (cpu *CPU) readPc() uint16 {
+	pc := cpu.pc
 	cpu.pc++
+
+	return pc
 }
 
 // read8Reg reads and returns 8 bit register value.
@@ -160,4 +171,22 @@ func (cpu *CPU) set16Reg(reg CPU16Register, val uint16) {
 func (cpu *CPU) load8Reg(dst CPU8Register, src CPU8Register) {
 	var val uint8 = cpu.read8Reg(src)
 	cpu.set8Reg(dst, val)
+}
+
+// inc8Reg increments value of 8 bits register and sets flags.
+func (cpu *CPU) inc8Reg(reg CPU8Register) {
+	val := cpu.read8Reg(reg)
+	val += 1
+
+	cpu.set8Reg(reg, val)
+
+	// Zero flag
+	if val == 0 {
+		cpu.zFlag = true
+	} else {
+		cpu.zFlag = false
+	}
+
+	cpu.nFlag = false
+	cpu.hFlag = (val & 0x0f) == 0
 }
