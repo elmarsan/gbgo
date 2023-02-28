@@ -184,3 +184,88 @@ func (cpu *CPU) inc8Reg(reg CPU8Register) {
 	cpu.nFlag = false
 	cpu.hFlag = (val & 0x0f) == 0
 }
+
+// dec8Reg decrements value of 8 bits register and sets flags.
+func (cpu *CPU) dec8Reg(reg CPU8Register) {
+	val := cpu.read8Reg(reg)
+	val -= 1
+
+	cpu.set8Reg(reg, val)
+
+	cpu.zFlag = val == 0
+	cpu.nFlag = true
+	cpu.hFlag = (val & 0x0f) == 0
+}
+
+// inc16reg increments value of 16 bits register and sets flags if required.
+func (cpu *CPU) inc16reg(reg CPU16Register, setFlags bool) {
+	val := cpu.read16Reg(reg)
+	val += 1
+	cpu.set16Reg(reg, val)
+
+	if setFlags {
+		cpu.zFlag = val == 0
+		cpu.nFlag = true
+		cpu.hFlag = (val & 0x0f) == 0
+	}
+}
+
+// dec16Reg decrements value of 8 bits register and sets flags.
+func (cpu *CPU) dec16Reg(reg CPU16Register) {
+	val := cpu.read16Reg(reg)
+	val -= 1
+
+	cpu.set16Reg(reg, val)
+
+	cpu.zFlag = val == 0
+	cpu.nFlag = true
+	cpu.hFlag = (val & 0x0f) > 0
+}
+
+// add8Reg adds a 8 bit register b 8 bit register and
+// stores result back in a register. It also sets cpu flags.
+func (cpu *CPU) add8Reg(a CPU8Register, b CPU8Register) {
+	add := cpu.read8Reg(a) + cpu.read8Reg(b)
+	cpu.set8Reg(a, add)
+
+	cpu.zFlag = add == 0
+	cpu.nFlag = false
+	cpu.cFlag = add > 0xff
+	cpu.hFlag = add > 0xf
+}
+
+func (cpu *CPU) add8RegValue(a CPU8Register, val uint8) {
+	add := cpu.read8Reg(a) + val
+	cpu.set8Reg(a, add)
+
+	cpu.zFlag = add == 0
+	cpu.nFlag = false
+	cpu.cFlag = add > 0xff
+	cpu.hFlag = (add & 0x0f) > 0xf
+}
+
+func (cpu *CPU) adc8Reg(a CPU8Register, b CPU8Register) {
+	add := cpu.read8Reg(a) + cpu.read8Reg(b)
+	if cpu.cFlag {
+		add += 1
+	}
+	cpu.set8Reg(a, add)
+
+	cpu.zFlag = add == 0
+	cpu.nFlag = false
+	cpu.cFlag = add > 0xff
+	cpu.hFlag = (add & 0x0f) > 0xf
+}
+
+func (cpu *CPU) adc8RegValue(a CPU8Register, val uint8) {
+	add := cpu.read8Reg(a) + val
+	if cpu.cFlag {
+		add += 1
+	}
+	cpu.set8Reg(a, add)
+
+	cpu.zFlag = add == 0
+	cpu.nFlag = false
+	cpu.cFlag = add > 0xff
+	cpu.hFlag = (add & 0x0f) > 0xf
+}

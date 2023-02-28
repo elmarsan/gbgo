@@ -4,19 +4,27 @@ var instructions = [0x100]func(){
 	0x00: func() {}, // NOP
 	0x01: func() {
 		// LD BC, d16
-
+		lsb := lo(cpu.readPc())
+		msb := hi(cpu.readPc())
+		cpu.set16Reg(REG_BC, joinUint8(msb, lsb))
 	},
 	0x02: func() {
 		// LD (BC), A
 		addr := cpu.read16Reg(REG_BC)
 		memory.write(addr, cpu.read8Reg(REG_A))
 	},
-	0x03: func() {}, // INC BC
+	0x03: func() {
+		// INC BC
+		cpu.inc16reg(REG_BC, false)
+	},
 	0x04: func() {
 		// INC B
 		cpu.inc8Reg(REG_B)
 	},
-	0x05: func() {}, // DEC B
+	0x05: func() {
+		// DEC B
+		cpu.dec8Reg(REG_B)
+	},
 	0x06: func() {
 		// LD B, d8
 		val := memory.read(cpu.readPc())
@@ -30,13 +38,19 @@ var instructions = [0x100]func(){
 		val := memory.read(cpu.read16Reg(REG_BC))
 		cpu.set8Reg(REG_A, val)
 	},
-	0x0b: func() {}, // DEC BC
+	0x0b: func() {
+		// DEC BC
+		cpu.dec16Reg(REG_BC)
+	},
 	0x0c: func() {
 		// INC C
 		cpu.inc8Reg(REG_C)
 	},
 
-	0x0d: func() {}, // DEC C
+	0x0d: func() {
+		// DEC C
+		cpu.dec8Reg(REG_D)
+	},
 	0x0e: func() {
 		// LD C, d8
 		cpu.set8Reg(REG_C, memory.read(cpu.readPc()))
@@ -53,12 +67,18 @@ var instructions = [0x100]func(){
 		val := cpu.read8Reg(REG_A)
 		memory.write(addr, val)
 	},
-	0x13: func() {}, // INC DE
+	0x13: func() {
+		// INC DE
+		cpu.inc16reg(REG_DE, false)
+	},
 	0x14: func() {
 		// INC D
 		cpu.inc8Reg(REG_D)
 	},
-	0x15: func() {}, // DEC D
+	0x15: func() {
+		// DEC D
+		cpu.dec8Reg(REG_D)
+	},
 	0x16: func() {
 		// LD D, d8
 		cpu.set8Reg(REG_D, memory.read(cpu.readPc()))
@@ -67,12 +87,18 @@ var instructions = [0x100]func(){
 	0x18: func() {}, // JR r8
 	0x19: func() {}, // ADD HL, DE
 	0x1a: func() {}, // LD A, (DE)
-	0x1b: func() {}, // DEC DE
+	0x1b: func() {
+		// DEC DE
+		cpu.dec16Reg(REG_DE)
+	},
 	0x1c: func() {
 		// INC E
 		cpu.inc8Reg(REG_E)
 	},
-	0x1d: func() {}, // DEC E
+	0x1d: func() {
+		// DEC E
+		cpu.dec8Reg(REG_E)
+	},
 	0x1e: func() {}, // LD E, d8
 	0x1f: func() {}, // RRA
 
@@ -85,12 +111,18 @@ var instructions = [0x100]func(){
 		memory.write(addr, val)
 		cpu.set16Reg(REG_HL, addr+1)
 	},
-	0x23: func() {}, // INC HL
+	0x23: func() {
+		// INC HL
+		cpu.inc16reg(REG_HL, false)
+	},
 	0x24: func() {
 		// INC H
 		cpu.inc8Reg(REG_H)
 	},
-	0x25: func() {}, // DEC H
+	0x25: func() {
+		// DEC H
+		cpu.dec8Reg(REG_H)
+	},
 	0x26: func() {
 		// LD H, d8
 		cpu.set8Reg(REG_H, memory.read(cpu.readPc()))
@@ -104,12 +136,18 @@ var instructions = [0x100]func(){
 		cpu.set8Reg(REG_A, val)
 		cpu.set16Reg(REG_HL, cpu.read16Reg(REG_HL)+1)
 	},
-	0x2b: func() {}, // DEC HL
+	0x2b: func() {
+		// DEC HL
+		cpu.dec16Reg(REG_HL)
+	},
 	0x2c: func() {
 		// INC L
 		cpu.inc8Reg(REG_L)
 	},
-	0x2d: func() {}, // DEC L
+	0x2d: func() {
+		// DEC L
+		cpu.dec8Reg(REG_L)
+	},
 	0x2e: func() {}, // LD L, d8
 	0x2f: func() {}, // CPL
 
@@ -122,9 +160,18 @@ var instructions = [0x100]func(){
 		memory.write(addr, val)
 		cpu.set16Reg(REG_HL, addr-1)
 	},
-	0x33: func() {}, // INC SP
-	0x34: func() {}, // INC (HL)
-	0x35: func() {}, // DEC (HL)
+	0x33: func() {
+		// INC SP
+		cpu.sp = cpu.sp + 1
+	},
+	0x34: func() {
+		// INC (HL)
+		cpu.inc16reg(REG_HL, true)
+	},
+	0x35: func() {
+		// DEC (HL)
+
+	},
 	0x36: func() {
 		// LD (HL), d8
 		addr := cpu.read16Reg(REG_HL)
@@ -135,12 +182,18 @@ var instructions = [0x100]func(){
 	0x38: func() {}, // JR C, r8
 	0x39: func() {}, // ADD HL, SP
 	0x3a: func() {}, // LD A, (HL-)
-	0x3b: func() {}, // DEC SP
+	0x3b: func() {
+		// DEC SP
+		cpu.sp = cpu.sp - 1
+	},
 	0x3c: func() {
 		// INC A
 		cpu.inc8Reg(REG_A)
 	},
-	0x3d: func() {}, // DEC A
+	0x3d: func() {
+		// DEC A
+		cpu.dec8Reg(REG_A)
+	},
 	0x3e: func() {}, // LD A, d8
 	0x3f: func() {}, // CCF
 
@@ -419,23 +472,72 @@ var instructions = [0x100]func(){
 
 	0x80: func() {
 		// ADD A, B
-
+		cpu.add8Reg(REG_A, REG_B)
 	},
-	0x81: func() {},
-	0x82: func() {},
-	0x83: func() {},
-	0x84: func() {},
-	0x85: func() {},
-	0x86: func() {},
-	0x87: func() {},
-	0x88: func() {},
-	0x89: func() {},
-	0x8a: func() {},
-	0x8b: func() {},
-	0x8c: func() {},
-	0x8d: func() {},
-	0x8e: func() {},
-	0x8f: func() {},
+	0x81: func() {
+		// ADD A, C
+		cpu.add8Reg(REG_A, REG_C)
+	},
+	0x82: func() {
+		// ADD A, D
+		cpu.add8Reg(REG_A, REG_D)
+	},
+	0x83: func() {
+		// ADD A, E
+		cpu.add8Reg(REG_A, REG_E)
+	},
+	0x84: func() {
+		// ADD A, H
+		cpu.add8Reg(REG_A, REG_H)
+	},
+	0x85: func() {
+		// ADD A, L
+		cpu.add8Reg(REG_A, REG_L)
+	},
+	0x86: func() {
+		// ADD A, HL
+		addr := cpu.read16Reg(REG_HL)
+		val := memory.read(addr)
+		cpu.add8RegValue(REG_A, val)
+	},
+	0x87: func() {
+		// ADD A, A
+		cpu.add8Reg(REG_A, REG_A)
+	},
+	0x88: func() {
+		// ADC A, B
+		cpu.adc8Reg(REG_A, REG_B)
+	},
+	0x89: func() {
+		// ADC A, C
+		cpu.adc8Reg(REG_A, REG_C)
+	},
+	0x8a: func() {
+		// ADC A, D
+		cpu.adc8Reg(REG_A, REG_D)
+	},
+	0x8b: func() {
+		// ADC A, E
+		cpu.adc8Reg(REG_A, REG_E)
+	},
+	0x8c: func() {
+		// ADC A, H
+		cpu.adc8Reg(REG_A, REG_H)
+	},
+	0x8d: func() {
+		// ADC A, L
+		cpu.adc8Reg(REG_A, REG_L)
+	},
+	0x8e: func() {
+		// ADC A, HL
+		addr := cpu.read16Reg(REG_HL)
+		val := memory.read(addr)
+		cpu.adc8RegValue(REG_A, val)
+	},
+	0x8f: func() {
+		// ADC A, A
+		cpu.adc8Reg(REG_A, REG_A)
+	},
 
 	0x90: func() {},
 	0x91: func() {},
