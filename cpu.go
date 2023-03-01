@@ -335,3 +335,75 @@ func (cpu *CPU) sbc8RegD8(a CPU8Register, d8 uint8) {
 	cpu.cFlag = sub > 0xff
 	cpu.hFlag = (sub & 0x0f) == 0
 }
+
+// and8Reg performs bitwise AND between a and b.
+// It stores in register a (a & b) and set flags.
+func (cpu *CPU) and8Reg(a CPU8Register, b CPU8Register) {
+	and := cpu.read8Reg(a) & cpu.read8Reg(b)
+	cpu.set8Reg(a, and)
+
+	cpu.zFlag = and == 0
+	cpu.nFlag = false
+	cpu.cFlag = false
+	cpu.hFlag = true
+}
+
+// and8RegD8 performs bitwise AND between a and d8.
+// It stores in register a (a & d8) and set flags.
+func (cpu *CPU) and8RegD8(a CPU8Register, d8 uint8) {
+	and := cpu.read8Reg(a) & d8
+	cpu.set8Reg(a, and)
+
+	cpu.zFlag = and == 0
+	cpu.nFlag = false
+	cpu.cFlag = false
+	cpu.hFlag = true
+}
+
+// xor8Reg performs bitwise XOR between a and b.
+// It stores in register a (a ^ b) and set flags.
+func (cpu *CPU) xor8Reg(a CPU8Register, b CPU8Register) {
+	xorg := cpu.read8Reg(a) ^ cpu.read8Reg(b)
+	cpu.set8Reg(a, xorg)
+
+	cpu.zFlag = xorg == 0
+	cpu.nFlag = false
+	cpu.cFlag = false
+	cpu.hFlag = false
+}
+
+// xor8RegD8 performs bitwise XOR between a and d8.
+// It stores in register a (a ^ d8) and set flags.
+func (cpu *CPU) xor8RegD8(a CPU8Register, d8 uint8) {
+	xorg := cpu.read8Reg(a) ^ d8
+	cpu.set8Reg(a, xorg)
+
+	cpu.zFlag = xorg == 0
+	cpu.nFlag = false
+	cpu.cFlag = false
+	cpu.hFlag = false
+}
+
+// or8Reg performs bitwise OR between a and b.
+// It stores in register a (a | b) and set flags.
+func (cpu *CPU) or8Reg(a CPU8Register, b CPU8Register) {
+	xorg := cpu.read8Reg(a) | cpu.read8Reg(b)
+	cpu.set8Reg(a, xorg)
+
+	cpu.zFlag = xorg == 0
+	cpu.nFlag = false
+	cpu.cFlag = false
+	cpu.hFlag = false
+}
+
+// or8RegD8 performs bitwise OR between a and d8.
+// It stores in register a (a | d8) and set flags.
+func (cpu *CPU) or8RegD8(a CPU8Register, d8 uint8) {
+	xorg := cpu.read8Reg(a) | d8
+	cpu.set8Reg(a, xorg)
+
+	cpu.zFlag = xorg == 0
+	cpu.nFlag = false
+	cpu.cFlag = false
+	cpu.hFlag = false
+}

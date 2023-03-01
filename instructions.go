@@ -607,31 +607,109 @@ var instructions = [0x100]func(){
 		cpu.sbc8Reg(REG_A, REG_A)
 	},
 
-	0xa0: func() {},
-	0xa1: func() {},
-	0xa2: func() {},
-	0xa3: func() {},
-	0xa4: func() {},
-	0xa5: func() {},
-	0xa6: func() {},
-	0xa7: func() {},
-	0xa8: func() {},
-	0xa9: func() {},
-	0xaa: func() {},
-	0xab: func() {},
-	0xac: func() {},
-	0xad: func() {},
-	0xae: func() {},
-	0xaf: func() {},
+	0xa0: func() {
+		// AND B
+		cpu.and8Reg(REG_A, REG_B)
+	},
+	0xa1: func() {
+		// AND C
+		cpu.and8Reg(REG_A, REG_C)
+	},
+	0xa2: func() {
+		// AND D
+		cpu.and8Reg(REG_A, REG_D)
+	},
+	0xa3: func() {
+		// AND E
+		cpu.and8Reg(REG_A, REG_E)
+	},
+	0xa4: func() {
+		// AND H
+		cpu.and8Reg(REG_A, REG_H)
+	},
+	0xa5: func() {
+		// AND L
+		cpu.and8Reg(REG_A, REG_L)
+	},
+	0xa6: func() {
+		// AND HL
+		addr := cpu.read16Reg(REG_HL)
+		val := memory.read(addr)
+		cpu.and8RegD8(REG_A, val)
+	},
+	0xa7: func() {
+		// AND A
+		cpu.and8Reg(REG_A, REG_A)
+	},
+	0xa8: func() {
+		// XOR B
+		cpu.xor8Reg(REG_A, REG_B)
+	},
+	0xa9: func() {
+		// XOR C
+		cpu.xor8Reg(REG_A, REG_C)
+	},
+	0xaa: func() {
+		// XOR D
+		cpu.xor8Reg(REG_A, REG_D)
+	},
+	0xab: func() {
+		// XOR E
+		cpu.xor8Reg(REG_A, REG_E)
+	},
+	0xac: func() {
+		// XOR H
+		cpu.xor8Reg(REG_A, REG_H)
+	},
+	0xad: func() {
+		// XOR L
+		cpu.xor8Reg(REG_A, REG_L)
+	},
+	0xae: func() {
+		// XOR HL
+		addr := cpu.read16Reg(REG_HL)
+		val := memory.read(addr)
+		cpu.xor8RegD8(REG_A, val)
+	},
+	0xaf: func() {
+		// XOR A
+		cpu.xor8Reg(REG_A, REG_A)
+	},
 
-	0xb0: func() {},
-	0xb1: func() {},
-	0xb2: func() {},
-	0xb3: func() {},
-	0xb4: func() {},
-	0xb5: func() {},
-	0xb6: func() {},
-	0xb7: func() {},
+	0xb0: func() {
+		// OR B
+		cpu.or8Reg(REG_A, REG_B)
+	},
+	0xb1: func() {
+		// OR C
+		cpu.or8Reg(REG_A, REG_C)
+	},
+	0xb2: func() {
+		// OR D
+		cpu.or8Reg(REG_A, REG_D)
+	},
+	0xb3: func() {
+		// OR E
+		cpu.or8Reg(REG_A, REG_E)
+	},
+	0xb4: func() {
+		// OR H
+		cpu.or8Reg(REG_A, REG_H)
+	},
+	0xb5: func() {
+		// OR L
+		cpu.or8Reg(REG_A, REG_L)
+	},
+	0xb6: func() {
+		// OR HL
+		addr := cpu.read16Reg(REG_HL)
+		val := memory.read(addr)
+		cpu.or8RegD8(REG_A, val)
+	},
+	0xb7: func() {
+		// OR A
+		cpu.or8Reg(REG_A, REG_A)
+	},
 	0xb8: func() {},
 	0xb9: func() {},
 	0xba: func() {},
@@ -701,7 +779,12 @@ var instructions = [0x100]func(){
 	0xe3: func() {},
 	0xe4: func() {},
 	0xe5: func() {},
-	0xe6: func() {},
+	0xe6: func() {
+		// AND d8
+		addr := cpu.readPc()
+		val := memory.read(addr)
+		cpu.and8RegD8(REG_A, val)
+	},
 	0xe7: func() {},
 	0xe8: func() {},
 	0xe9: func() {},
@@ -715,7 +798,12 @@ var instructions = [0x100]func(){
 	0xeb: func() {},
 	0xec: func() {},
 	0xed: func() {},
-	0xee: func() {},
+	0xee: func() {
+		// XOR d8
+		addr := cpu.readPc()
+		val := memory.read(addr)
+		cpu.xor8RegD8(REG_A, val)
+	},
 	0xef: func() {},
 
 	0xf0: func() {
@@ -729,7 +817,12 @@ var instructions = [0x100]func(){
 	0xf3: func() {},
 	0xf4: func() {},
 	0xf5: func() {},
-	0xf6: func() {},
+	0xf6: func() {
+		// OR d8
+		addr := cpu.readPc()
+		val := memory.read(addr)
+		cpu.or8RegD8(REG_A, val)
+	},
 	0xf7: func() {},
 	0xf8: func() {},
 	0xf9: func() {},
