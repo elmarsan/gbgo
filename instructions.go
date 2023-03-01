@@ -498,7 +498,7 @@ var instructions = [0x100]func(){
 		// ADD A, HL
 		addr := cpu.read16Reg(REG_HL)
 		val := memory.read(addr)
-		cpu.add8RegValue(REG_A, val)
+		cpu.add8RegD8(REG_A, val)
 	},
 	0x87: func() {
 		// ADD A, A
@@ -532,29 +532,80 @@ var instructions = [0x100]func(){
 		// ADC A, HL
 		addr := cpu.read16Reg(REG_HL)
 		val := memory.read(addr)
-		cpu.adc8RegValue(REG_A, val)
+		cpu.adc8RegD8(REG_A, val)
 	},
 	0x8f: func() {
 		// ADC A, A
 		cpu.adc8Reg(REG_A, REG_A)
 	},
 
-	0x90: func() {},
-	0x91: func() {},
-	0x92: func() {},
-	0x93: func() {},
-	0x94: func() {},
-	0x95: func() {},
-	0x96: func() {},
-	0x97: func() {},
-	0x98: func() {},
-	0x99: func() {},
-	0x9a: func() {},
-	0x9b: func() {},
-	0x9c: func() {},
-	0x9d: func() {},
-	0x9e: func() {},
-	0x9f: func() {},
+	0x90: func() {
+		// SUB B
+		cpu.sub8Reg(REG_A, REG_B)
+	},
+	0x91: func() {
+		// SUB C
+		cpu.sub8Reg(REG_A, REG_C)
+	},
+	0x92: func() {
+		// SUB D
+		cpu.sub8Reg(REG_A, REG_D)
+	},
+	0x93: func() {
+		// SUB E
+		cpu.sub8Reg(REG_A, REG_E)
+	},
+	0x94: func() {
+		// SUB H
+		cpu.sub8Reg(REG_A, REG_H)
+	},
+	0x95: func() {
+		// SUB L
+		cpu.sub8Reg(REG_A, REG_L)
+	},
+	0x96: func() {
+		// SUB (HL)
+		val := memory.read(cpu.read16Reg(REG_HL))
+		cpu.sub8RegD8(REG_A, val)
+	},
+	0x97: func() {
+		// SUB A
+		cpu.sub8Reg(REG_A, REG_A)
+	},
+	0x98: func() {
+		// SBC A, B
+		cpu.sbc8Reg(REG_A, REG_B)
+	},
+	0x99: func() {
+		// SBC A, C
+		cpu.sbc8Reg(REG_A, REG_C)
+	},
+	0x9a: func() {
+		// SBC A, D
+		cpu.sbc8Reg(REG_A, REG_D)
+	},
+	0x9b: func() {
+		// SBC A, E
+		cpu.sbc8Reg(REG_A, REG_E)
+	},
+	0x9c: func() {
+		// SBC A, H
+		cpu.sbc8Reg(REG_A, REG_H)
+	},
+	0x9d: func() {
+		// SBC A, L
+		cpu.sbc8Reg(REG_A, REG_L)
+	},
+	0x9e: func() {
+		// SBC A, (HL)
+		addr := cpu.read16Reg(REG_HL)
+		val := memory.read(addr)
+		cpu.sbc8RegD8(REG_A, val)
+	},
+	0x9f: func() {
+		// SBC A, A
+		cpu.sbc8Reg(REG_A, REG_A)
+	},
 
 	0xa0: func() {},
 	0xa1: func() {},
@@ -604,7 +655,12 @@ var instructions = [0x100]func(){
 	0xcb: func() {},
 	0xcc: func() {},
 	0xcd: func() {},
-	0xce: func() {},
+	0xce: func() {
+		// ADC A, d8
+		addr := cpu.readPc()
+		val := memory.read(addr)
+		cpu.adc8RegD8(REG_A, val)
+	},
 	0xcf: func() {},
 
 	0xd0: func() {},
@@ -613,7 +669,12 @@ var instructions = [0x100]func(){
 	0xd3: func() {},
 	0xd4: func() {},
 	0xd5: func() {},
-	0xd6: func() {},
+	0xd6: func() {
+		// SUB d8
+		addr := cpu.readPc()
+		val := memory.read(addr)
+		cpu.sub8RegD8(REG_A, val)
+	},
 	0xd7: func() {},
 	0xd8: func() {},
 	0xd9: func() {},
@@ -621,7 +682,12 @@ var instructions = [0x100]func(){
 	0xdb: func() {},
 	0xdc: func() {},
 	0xdd: func() {},
-	0xde: func() {},
+	0xde: func() {
+		// SBC A, d8
+		addr := cpu.readPc()
+		val := memory.read(addr)
+		cpu.sbc8RegD8(REG_A, val)
+	},
 	0xdf: func() {},
 
 	0xe0: func() {
