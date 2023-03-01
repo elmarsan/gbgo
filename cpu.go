@@ -407,3 +407,25 @@ func (cpu *CPU) or8RegD8(a CPU8Register, d8 uint8) {
 	cpu.cFlag = false
 	cpu.hFlag = false
 }
+
+// cp8Reg compares the values of register a and b.
+// It set flags.
+func (cpu *CPU) cp8Reg(a CPU8Register, b CPU8Register) {
+	sub := cpu.read8Reg(a) - cpu.read8Reg(b)
+
+	cpu.zFlag = sub == 0
+	cpu.nFlag = true
+	cpu.cFlag = sub > 0xff
+	cpu.hFlag = (sub & 0x0f) == 0
+}
+
+// cp8RegD8 compares the values of register a and d8.
+// It set flags.
+func (cpu *CPU) cp8RegD8(a CPU8Register, d8 uint8) {
+	sub := cpu.read8Reg(a) - d8
+
+	cpu.zFlag = sub == 0
+	cpu.nFlag = true
+	cpu.cFlag = sub > 0xff
+	cpu.hFlag = (sub & 0x0f) == 0
+}
