@@ -31,8 +31,19 @@ var instructions = [0x100]func(){
 		cpu.set8Reg(REG_B, val)
 	},
 	0x07: func() {}, // RLCA
-	0x08: func() {}, // LD (a16), SP
-	0x09: func() {}, // ADD HL, BC
+	0x08: func() {
+		// LD (a16), SP
+		lsb := lo(cpu.readPc())
+		msb := hi(cpu.readPc())
+		addr := joinUint8(msb, lsb)
+
+		memory.write(addr, lo(cpu.sp))
+		memory.write(addr+1, hi(cpu.sp))
+	},
+	0x09: func() {
+		// ADD HL, BC
+		cpu.add16Reg(REG_HL, REG_BC)
+	},
 	0x0a: func() {
 		// LD A, (BC)
 		val := memory.read(cpu.read16Reg(REG_BC))
@@ -85,7 +96,10 @@ var instructions = [0x100]func(){
 	},
 	0x17: func() {}, // RLA
 	0x18: func() {}, // JR r8
-	0x19: func() {}, // ADD HL, DE
+	0x19: func() {
+		// ADD HL, DE
+		cpu.add16Reg(REG_HL, REG_DE)
+	},
 	0x1a: func() {}, // LD A, (DE)
 	0x1b: func() {
 		// DEC DE
@@ -129,7 +143,10 @@ var instructions = [0x100]func(){
 	},
 	0x27: func() {}, // DAA
 	0x28: func() {}, // JR Z, r8
-	0x29: func() {}, // ADD HL, HL
+	0x29: func() {
+		// ADD HL, HL
+		cpu.add16Reg(REG_HL, REG_HL)
+	},
 	0x2a: func() {
 		// LD A, (HL+)
 		val := memory.read(cpu.read16Reg(REG_HL))
@@ -185,7 +202,10 @@ var instructions = [0x100]func(){
 	},
 	0x37: func() {}, // SCF
 	0x38: func() {}, // JR C, r8
-	0x39: func() {}, // ADD HL, SP
+	0x39: func() {
+		// ADD HL, SP
+		cpu.add16Reg(REG_HL, REG_SP)
+	},
 	0x3a: func() {}, // LD A, (HL-)
 	0x3b: func() {
 		// DEC SP
@@ -824,7 +844,11 @@ var instructions = [0x100]func(){
 		cpu.and8RegD8(REG_A, val)
 	},
 	0xe7: func() {},
-	0xe8: func() {},
+	0xe8: func() {
+		// ADD SP, r8
+		val := cpu.readPc()
+		cpu.add16RegD8(REG_SP, uint8(val))
+	},
 	0xe9: func() {},
 	0xea: func() {
 		// LD (a16), A

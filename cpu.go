@@ -46,6 +46,7 @@ const (
 	REG_BC
 	REG_DE
 	REG_HL
+	REG_SP
 )
 
 var cpu = &CPU{
@@ -103,6 +104,8 @@ func (cpu *CPU) read16Reg(reg CPU16Register) uint16 {
 		return joinUint8(cpu.d, cpu.e)
 	case REG_HL:
 		return joinUint8(cpu.h, cpu.l)
+	case REG_SP:
+		return cpu.sp
 	default:
 		log.Fatalf("Unknown register %s", reg)
 		return 0
@@ -238,6 +241,18 @@ func (cpu *CPU) add8Reg(a CPU8Register, b CPU8Register) {
 	cpu.hFlag = add > 0xf
 }
 
+// add16Reg adds b to a.
+// It stores in a register a (a + b) and sets flags.
+func (cpu *CPU) add16Reg(a CPU16Register, b CPU16Register) {
+	add := cpu.read16Reg(a) + cpu.read16Reg(b)
+	cpu.set16Reg(a, add)
+
+	cpu.zFlag = false
+	cpu.nFlag = false
+	cpu.cFlag = add > 0xffff
+	cpu.hFlag = (add & 0x00ff) > 0xff
+}
+
 // add8RegD8 add d8 into a.
 // It stores in a register a (a + d8) and sets flags.
 func (cpu *CPU) add8RegD8(a CPU8Register, d8 uint8) {
@@ -248,6 +263,18 @@ func (cpu *CPU) add8RegD8(a CPU8Register, d8 uint8) {
 	cpu.nFlag = false
 	cpu.cFlag = add > 0xff
 	cpu.hFlag = (add & 0x0f) > 0xf
+}
+
+// add16RegD8 add d8 into a.
+// It stores in a register a (a + d8) and sets flags.
+func (cpu *CPU) add16RegD8(a CPU16Register, d8 uint8) {
+	add := cpu.read16Reg(a) + uint16(d8)
+	cpu.set16Reg(a, add)
+
+	cpu.zFlag = false
+	cpu.nFlag = false
+	cpu.cFlag = add > 0xffff
+	cpu.hFlag = (add & 0x00ff) > 0xff
 }
 
 // adc8Reg add b + carry flag into a.
