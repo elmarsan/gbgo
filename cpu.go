@@ -176,6 +176,11 @@ func (cpu *CPU) load8Reg(a CPU8Register, b CPU8Register) {
 	cpu.set8Reg(a, val)
 }
 
+// load16RegD16 loads D16 into a.
+func (cpu *CPU) load16RegD16(a CPU16Register, d16 uint16) {
+	cpu.set16Reg(a, d16)
+}
+
 // inc8Reg increments 8 bit register.
 // It stores in a register a (a + 1) and sets flags.
 func (cpu *CPU) inc8Reg(a CPU8Register) {
@@ -414,10 +419,10 @@ func (cpu *CPU) xor8RegD8(a CPU8Register, d8 uint8) {
 // or8Reg performs bitwise OR between a and b.
 // It stores in register a (a | b) and set flags.
 func (cpu *CPU) or8Reg(a CPU8Register, b CPU8Register) {
-	xorg := cpu.read8Reg(a) | cpu.read8Reg(b)
-	cpu.set8Reg(a, xorg)
+	or := cpu.read8Reg(a) | cpu.read8Reg(b)
+	cpu.set8Reg(a, or)
 
-	cpu.zFlag = xorg == 0
+	cpu.zFlag = or == 0
 	cpu.nFlag = false
 	cpu.cFlag = false
 	cpu.hFlag = false
@@ -426,10 +431,10 @@ func (cpu *CPU) or8Reg(a CPU8Register, b CPU8Register) {
 // or8RegD8 performs bitwise OR between a and d8.
 // It stores in register a (a | d8) and set flags.
 func (cpu *CPU) or8RegD8(a CPU8Register, d8 uint8) {
-	xorg := cpu.read8Reg(a) | d8
-	cpu.set8Reg(a, xorg)
+	or := cpu.read8Reg(a) | d8
+	cpu.set8Reg(a, or)
 
-	cpu.zFlag = xorg == 0
+	cpu.zFlag = or == 0
 	cpu.nFlag = false
 	cpu.cFlag = false
 	cpu.hFlag = false
@@ -455,4 +460,54 @@ func (cpu *CPU) cp8RegD8(a CPU8Register, d8 uint8) {
 	cpu.nFlag = true
 	cpu.cFlag = sub > 0xff
 	cpu.hFlag = (sub & 0x0f) == 0
+}
+
+// rlc8Reg rotate A left
+// It rotates a register 1 bit to the left and set carry flag.
+func (cpu *CPU) rlc8Reg(a CPU8Register) {
+	val := cpu.read8Reg(a)
+	cpu.set8Reg(a, rotateLeft(val, 1))
+	cpu.cFlag = readBit(val, 7)
+}
+
+// rl8Reg rotate A left through carry
+// It rotates a register 1 bit to the left and set carry flag.
+// The bit rotated is replaced by carry flag value.
+func (cpu *CPU) rl8Reg(a CPU8Register) {
+	val := cpu.read8Reg(a)
+	rotated := rotateLeft(val, 1)
+
+	if cpu.cFlag {
+		setBit(rotated, 7)
+	} else {
+		clearBit(rotated, 7)
+	}
+
+	cpu.set8Reg(a, rotated)
+	cpu.cFlag = readBit(rotated, 7)
+}
+
+// rrc8Reg rotate A RIGHT
+// It rotates a register 1 bit to the right and set carry flag.
+func (cpu *CPU) rrc8Reg(a CPU8Register) {
+	val := cpu.read8Reg(a)
+	cpu.set8Reg(a, rotateRight(val, 1))
+	cpu.cFlag = readBit(val, 0)
+}
+
+// rr8Reg rotate A right through carry
+// It rotates a register 1 bit to the right and set carry flag.
+// The bit rotated is replaced by carry flag value.
+func (cpu *CPU) rr8Reg(a CPU8Register) {
+	val := cpu.read8Reg(a)
+	rotated := rotateRight(val, 1)
+
+	if cpu.cFlag {
+		setBit(rotated, 0)
+	} else {
+		clearBit(rotated, 0)
+	}
+
+	cpu.set8Reg(a, rotated)
+	cpu.cFlag = readBit(rotated, 0)
 }

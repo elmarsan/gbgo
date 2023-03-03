@@ -19,3 +19,32 @@ func lo(n uint16) uint8 {
 func joinUint8(n1 uint8, n2 uint8) uint16 {
 	return uint16(n1)<<8 | uint16(n2)
 }
+
+// rotateLeft rotates bits to the left by pos.
+func rotateLeft(b uint8, pos uint8) uint8 {
+	return b<<pos | b>>(8-pos)
+}
+
+// rotateRight rotates bits to the right by pos.
+func rotateRight(b uint8, pos uint8) uint8 {
+	return b>>pos | b<<(8-pos)
+}
+
+// setBit sets bit at pos of b.
+func setBit(b uint8, pos uint8) uint8 {
+	b |= pos << b
+	return b
+}
+
+// clearBit clear bit at pos of b.
+func clearBit(b uint8, pos uint8) uint8 {
+	var mask uint8 = ^(1 << pos)
+	b &= mask
+	return b
+}
+
+// readBit returns state of bit at pos of b.
+func readBit(b uint8, pos uint8) bool {
+	bit := b & (1 << pos)
+	return (bit > 0)
+}

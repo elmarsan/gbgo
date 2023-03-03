@@ -1,6 +1,8 @@
 package main
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestReverse(t *testing.T) {
 	var val uint16 = 0xaabb
@@ -37,5 +39,56 @@ func TestJoinUint8(t *testing.T) {
 
 	if val != 0x12b8 {
 		t.Error("Wrong uint8 joining")
+	}
+}
+
+func TestRotateLeft(t *testing.T) {
+	var x uint8 = 0b11001010
+
+	rotated := rotateLeft(x, 4)
+
+	if rotated != 0b10101100 {
+		t.Error("Wrong left rotation")
+	}
+}
+
+func TestRotateRight(t *testing.T) {
+	var x uint8 = 0b11001010
+
+	rotated := rotateRight(x, 2)
+
+	if rotated != 0b10110010 {
+		t.Error("Wrong right rotation")
+	}
+}
+
+func TestReadBit(t *testing.T) {
+	t.Run("Bit enabled", func(t *testing.T) {
+		var x uint8 = 0b11001010
+
+		enabled := readBit(x, 7)
+
+		if !enabled {
+			t.Error("Wrong bit reading")
+		}
+	})
+
+	t.Run("Bit disabled", func(t *testing.T) {
+		var x uint8 = 0b11001010
+
+		enabled := readBit(x, 5)
+
+		if enabled {
+			t.Error("Wrong bit reading")
+		}
+	})
+}
+
+func TestClearBit(t *testing.T) {
+	x := clearBit(0b11001010, 1)
+
+	enabled := readBit(x, 1)
+	if enabled {
+		t.Error("Wrong bit reading")
 	}
 }

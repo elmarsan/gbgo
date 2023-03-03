@@ -30,7 +30,10 @@ var instructions = [0x100]func(){
 		val := memory.read(cpu.readPc())
 		cpu.set8Reg(REG_B, val)
 	},
-	0x07: func() {}, // RLCA
+	0x07: func() {
+		// RLCA
+		cpu.rlc8Reg(REG_A)
+	},
 	0x08: func() {
 		// LD (a16), SP
 		lsb := lo(cpu.readPc())
@@ -66,7 +69,10 @@ var instructions = [0x100]func(){
 		// LD C, d8
 		cpu.set8Reg(REG_C, memory.read(cpu.readPc()))
 	},
-	0x0f: func() {}, // RRCA
+	0x0f: func() {
+		// RRCA
+		cpu.rrc8Reg(REG_A)
+	},
 
 	0x10: func() {
 		// STOP d8
@@ -94,7 +100,10 @@ var instructions = [0x100]func(){
 		// LD D, d8
 		cpu.set8Reg(REG_D, memory.read(cpu.readPc()))
 	},
-	0x17: func() {}, // RLA
+	0x17: func() {
+		// RLA
+		cpu.rl8Reg(REG_A)
+	},
 	0x18: func() {}, // JR r8
 	0x19: func() {
 		// ADD HL, DE
@@ -114,7 +123,10 @@ var instructions = [0x100]func(){
 		cpu.dec8Reg(REG_E)
 	},
 	0x1e: func() {}, // LD E, d8
-	0x1f: func() {}, // RRA
+	0x1f: func() {
+		// RRA
+		cpu.rr8Reg(REG_A)
+	},
 
 	0x20: func() {}, // JR NZ, r8
 	0x21: func() {}, // LD HL, d16
