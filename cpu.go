@@ -20,6 +20,10 @@ type CPU struct {
 	nFlag bool
 	hFlag bool
 	cFlag bool
+
+	ime bool  // Interrup master enable flag
+	ie  uint8 // Interrup enable
+	iF  uint8 // Interrup flag
 }
 
 // CPU8Register represents 8 bit register.
@@ -46,6 +50,7 @@ const (
 	REG_BC
 	REG_DE
 	REG_HL
+	REG_PC
 	REG_SP
 )
 
@@ -88,7 +93,7 @@ func (cpu *CPU) read8Reg(reg CPU8Register) uint8 {
 	case REG_L:
 		return cpu.l
 	default:
-		log.Fatalf("Unknown register %s", reg)
+		// log.Fatalf("Unknown register %s", reg)
 		return 0
 	}
 }
@@ -104,10 +109,12 @@ func (cpu *CPU) read16Reg(reg CPU16Register) uint16 {
 		return joinUint8(cpu.d, cpu.e)
 	case REG_HL:
 		return joinUint8(cpu.h, cpu.l)
+	case REG_PC:
+		return cpu.pc
 	case REG_SP:
 		return cpu.sp
 	default:
-		log.Fatalf("Unknown register %s", reg)
+		// log.Fatalf("Unknown register %s", reg)
 		return 0
 	}
 }
@@ -140,7 +147,7 @@ func (cpu *CPU) set8Reg(reg CPU8Register, val uint8) {
 		cpu.l = val
 		break
 	default:
-		log.Fatalf("Unknown register %s", reg)
+		// log.Fatalf("Unknown register %s", reg)
 		break
 	}
 }
@@ -164,8 +171,14 @@ func (cpu *CPU) set16Reg(reg CPU16Register, val uint16) {
 		cpu.h = hi(val)
 		cpu.l = lo(val)
 		break
+	case REG_SP:
+		cpu.sp = val
+		break
+	case REG_PC:
+		cpu.pc = val
+		break
 	default:
-		log.Fatalf("Unknown register %s", reg)
+		// log.Fatalf("Unknown register %s", reg)
 		break
 	}
 }
@@ -510,4 +523,42 @@ func (cpu *CPU) rr8Reg(a CPU8Register) {
 
 	cpu.set8Reg(a, rotated)
 	cpu.cFlag = readBit(rotated, 0)
+}
+
+// pushSp pushes a register on top of the stack pointer.
+func (cpu *CPU) pushSp(a CPU16Register) {
+	val := cpu.read16Reg(a)
+	memory.write(cpu.sp-1, hi(val))
+	memory.write(cpu.sp-2, lo(val))
+	cpu.set16Reg(REG_SP, cpu.sp-2)
+}
+
+// popSp pops memory address from top of the stack pointer.
+// It reads the value of the address and stores in a register.
+func (cpu *CPU) popSp(a CPU16Register) {
+	msb := memory.read(cpu.sp + 1)
+	lsb := memory.read(cpu.sp + 2)
+	val := joinUint8(msb, lsb)
+
+	cpu.set16Reg(a, val)
+	cpu.set16Reg(REG_SP, cpu.sp+2)
+
+	if a == REG_AF {
+		flags := cpu.read8Reg(REG_F)
+		cpu.cFlag = readBit(flags, 4)
+		cpu.hFlag = readBit(flags, 5)
+		cpu.nFlag = readBit(flags, 6)
+		cpu.zFlag = readBit(flags, 7)
+	}
+}
+
+// setIME sets IME flag.
+func (cpu *CPU) setIME(enabled bool) {
+	cpu.ime = enabled
+}
+
+// jump jumps to the next instruction located in addr.
+// It sets pc = addr
+func (cpu *CPU) jump(addr uint16) {
+	cpu.pc = addr
 }
