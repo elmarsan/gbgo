@@ -276,6 +276,9 @@ var instructions = [0x100]func(){
 	},
 	0x37: func() {
 		// SCF
+		cpu.nFlag = false
+		cpu.hFlag = false
+		cpu.cFlag = true
 	},
 	0x38: func() {
 		// JR C, r8
@@ -870,7 +873,12 @@ var instructions = [0x100]func(){
 		cpu.cp8Reg(REG_A, REG_A)
 	},
 
-	0xc0: func() {},
+	0xc0: func() {
+		// RET NZ
+		if !cpu.zFlag {
+			cpu.ret()
+		}
+	},
 	0xc1: func() {
 		// POP BC
 		cpu.popSp(REG_BC)
@@ -888,15 +896,39 @@ var instructions = [0x100]func(){
 		lsb := memory.read(cpu.readPc())
 		cpu.set16Reg(REG_SP, joinUint8(msb, lsb))
 	},
-	0xc4: func() {},
+	0xc4: func() {
+		// CALL NZ, a16
+		if !cpu.zFlag {
+			msb := memory.read(cpu.readPc())
+			lsb := memory.read(cpu.readPc())
+			addr := joinUint8(msb, lsb)
+			cpu.call(addr)
+		}
+	},
 	0xc5: func() {
 		// PUSH BC
 		cpu.pushSp(REG_BC)
 	},
-	0xc6: func() {},
-	0xc7: func() {},
-	0xc8: func() {},
-	0xc9: func() {},
+	0xc6: func() {
+		// ADD A, d8
+		addr := cpu.readPc()
+		val := memory.read(addr)
+		cpu.add8RegD8(REG_A, val)
+	},
+	0xc7: func() {
+		// RST 00H
+		cpu.call(0x0000)
+	},
+	0xc8: func() {
+		// RET Z
+		if cpu.zFlag {
+			cpu.ret()
+		}
+	},
+	0xc9: func() {
+		//  RET
+		cpu.ret()
+	},
 	0xca: func() {
 		// JP Z, a16
 		if cpu.zFlag {
@@ -904,18 +936,42 @@ var instructions = [0x100]func(){
 			cpu.jump(addr)
 		}
 	},
-	0xcb: func() {},
-	0xcc: func() {},
-	0xcd: func() {},
+	0xcb: func() {
+		// PREFIX
+	},
+	0xcc: func() {
+		//  CALL Z, a16
+		if cpu.zFlag {
+			msb := memory.read(cpu.readPc())
+			lsb := memory.read(cpu.readPc())
+			addr := joinUint8(msb, lsb)
+			cpu.call(addr)
+		}
+	},
+	0xcd: func() {
+		// CALL a16
+		msb := memory.read(cpu.readPc())
+		lsb := memory.read(cpu.readPc())
+		addr := joinUint8(msb, lsb)
+		cpu.call(addr)
+	},
 	0xce: func() {
 		// ADC A, d8
 		addr := cpu.readPc()
 		val := memory.read(addr)
 		cpu.adc8RegD8(REG_A, val)
 	},
-	0xcf: func() {},
+	0xcf: func() {
+		// RST 08H
+		cpu.call(0x0008)
+	},
 
-	0xd0: func() {},
+	0xd0: func() {
+		// RET NC
+		if !cpu.cFlag {
+			cpu.ret()
+		}
+	},
 	0xd1: func() {
 		// POP DE
 		cpu.popSp(REG_DE)
@@ -927,8 +983,15 @@ var instructions = [0x100]func(){
 			cpu.jump(addr)
 		}
 	},
-	0xd3: func() {},
-	0xd4: func() {},
+	0xd4: func() {
+		// CALL NC, a16
+		if !cpu.nFlag {
+			msb := memory.read(cpu.readPc())
+			lsb := memory.read(cpu.readPc())
+			addr := joinUint8(msb, lsb)
+			cpu.call(addr)
+		}
+	},
 	0xd5: func() {
 		// PUSH DE
 		cpu.pushSp(REG_DE)
@@ -939,9 +1002,21 @@ var instructions = [0x100]func(){
 		val := memory.read(addr)
 		cpu.sub8RegD8(REG_A, val)
 	},
-	0xd7: func() {},
-	0xd8: func() {},
-	0xd9: func() {},
+	0xd7: func() {
+		// RST 10H
+		cpu.call(0x0010)
+	},
+	0xd8: func() {
+		// RET C
+		if cpu.cFlag {
+			cpu.ret()
+		}
+	},
+	0xd9: func() {
+		// RETI
+		cpu.ret()
+		cpu.setIME(true)
+	},
 	0xda: func() {
 		// JP C, a16
 		if cpu.cFlag {
@@ -949,16 +1024,25 @@ var instructions = [0x100]func(){
 			cpu.jump(addr)
 		}
 	},
-	0xdb: func() {},
-	0xdc: func() {},
-	0xdd: func() {},
+	0xdc: func() {
+		// CALL C, a16
+		if cpu.cFlag {
+			msb := memory.read(cpu.readPc())
+			lsb := memory.read(cpu.readPc())
+			addr := joinUint8(msb, lsb)
+			cpu.call(addr)
+		}
+	},
 	0xde: func() {
 		// SBC A, d8
 		addr := cpu.readPc()
 		val := memory.read(addr)
 		cpu.sbc8RegD8(REG_A, val)
 	},
-	0xdf: func() {},
+	0xdf: func() {
+		// RST 18H
+		cpu.call(0x0018)
+	},
 
 	0xe0: func() {
 		// LDH (a8), A
@@ -972,9 +1056,10 @@ var instructions = [0x100]func(){
 	},
 	0xe2: func() {
 		// LD (C), A
+		addr := joinUint8(0xff, cpu.read8Reg(REG_C))
+		val := cpu.read8Reg(REG_A)
+		memory.write(addr, val)
 	},
-	0xe3: func() {},
-	0xe4: func() {},
 	0xe5: func() {
 		// PUSH HL
 		cpu.pushSp(REG_HL)
@@ -985,7 +1070,10 @@ var instructions = [0x100]func(){
 		val := memory.read(addr)
 		cpu.and8RegD8(REG_A, val)
 	},
-	0xe7: func() {},
+	0xe7: func() {
+		// RST 20H
+		cpu.call(0x0020)
+	},
 	0xe8: func() {
 		// ADD SP, r8
 		val := cpu.readPc()
@@ -1003,16 +1091,16 @@ var instructions = [0x100]func(){
 		addr := joinUint8(msb, lsb)
 		memory.write(addr, cpu.read8Reg(REG_A))
 	},
-	0xeb: func() {},
-	0xec: func() {},
-	0xed: func() {},
 	0xee: func() {
 		// XOR d8
 		addr := cpu.readPc()
 		val := memory.read(addr)
 		cpu.xor8RegD8(REG_A, val)
 	},
-	0xef: func() {},
+	0xef: func() {
+		// RST 28H
+		cpu.call(0x0028)
+	},
 
 	0xf0: func() {
 		// LDH A, (a8)
@@ -1026,12 +1114,15 @@ var instructions = [0x100]func(){
 	},
 	0xf2: func() {
 		// LD A, (C)
+		lsb := cpu.read8Reg(REG_C)
+		addr := joinUint8(0xff, lsb)
+		val := memory.read(addr)
+		cpu.set8Reg(REG_A, val)
 	},
 	0xf3: func() {
 		// DI
 		cpu.setIME(false)
 	},
-	0xf4: func() {},
 	0xf5: func() {
 		// PUSH AF
 		cpu.pushSp(REG_AF)
@@ -1042,9 +1133,21 @@ var instructions = [0x100]func(){
 		val := memory.read(addr)
 		cpu.or8RegD8(REG_A, val)
 	},
-	0xf7: func() {},
-	0xf8: func() {},
-	0xf9: func() {},
+	0xf7: func() {
+		// RST 30H
+		cpu.call(0x0030)
+	},
+	0xf8: func() {
+		//  LD HL, SP + r8
+		pc := cpu.readPc()
+		r8 := int8(memory.read(pc))
+		val := int32(cpu.sp) + int32(r8)
+		cpu.set16Reg(REG_HL, uint16(val))
+	},
+	0xf9: func() {
+		// LD SP, HL
+		cpu.set16Reg(REG_SP, REG_HL)
+	},
 	0xfa: func() {
 		// LD A, (a16)
 		lsb := lo(cpu.readPc())
@@ -1056,12 +1159,13 @@ var instructions = [0x100]func(){
 		// IE
 		cpu.setIME(true)
 	},
-	0xfc: func() {},
-	0xfd: func() {},
 	0xfe: func() {
 		addr := cpu.readPc()
 		val := memory.read(addr)
 		cpu.cp8RegD8(REG_A, val)
 	},
-	0xff: func() {},
+	0xff: func() {
+		// RST 38H
+		cpu.call(0x0038)
+	},
 }

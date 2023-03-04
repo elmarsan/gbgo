@@ -247,7 +247,7 @@ func (cpu *CPU) dec16Reg(a CPU16Register) {
 	cpu.hFlag = (dec & 0x0f) > 0
 }
 
-// add8RegD8 adds b to a.
+// add8Reg adds b to a.
 // It stores in a register a (a + b) and sets flags.
 func (cpu *CPU) add8Reg(a CPU8Register, b CPU8Register) {
 	add := cpu.read8Reg(a) + cpu.read8Reg(b)
@@ -561,4 +561,15 @@ func (cpu *CPU) setIME(enabled bool) {
 // It sets pc = addr
 func (cpu *CPU) jump(addr uint16) {
 	cpu.pc = addr
+}
+
+// call calls function located in addr and push pc into sp.
+func (cpu *CPU) call(addr uint16) {
+	cpu.pushSp(REG_PC)
+	cpu.pc = addr
+}
+
+// ret returns from function.
+func (cpu *CPU) ret() {
+	cpu.popSp(REG_PC)
 }

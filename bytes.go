@@ -16,8 +16,8 @@ func lo(n uint16) uint8 {
 }
 
 // joinUint8 joins two uint8 into uint16
-func joinUint8(n1 uint8, n2 uint8) uint16 {
-	return uint16(n1)<<8 | uint16(n2)
+func joinUint8(hi uint8, lo uint8) uint16 {
+	return uint16(hi)<<8 | uint16(lo)
 }
 
 // rotateLeft rotates bits to the left by pos.
