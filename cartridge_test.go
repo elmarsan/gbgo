@@ -10,7 +10,7 @@ func TestCartridge(t *testing.T) {
 	t.Run("Load", func(t *testing.T) {
 		c := &Cartridge{}
 
-		err := c.Load("rom/dmg-acid2.gb")
+		err := c.load("rom/dmg-acid2.gb")
 		if err != nil {
 			t.Error(err)
 		}
