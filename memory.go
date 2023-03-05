@@ -1,11 +1,10 @@
 package main
 
-// Memory Map
+import "log"
+
+// Memory map
 const (
-	CARTRIDGE_BANK_0_START uint16 = 0xfff
-	CARTRIDGE_BANK_0_END   uint16 = 0x3fff
-	CARTRIDGE_BANK_1_START uint16 = 0x4000
-	CARTRIDGE_BANK_1_END   uint16 = 0x7fff
+	CARTRIDGE_END uint16 = 0x7fff
 
 	VRAM_START uint16 = 0x8000
 	VRAM_END   uint16 = 0x9fff
@@ -13,110 +12,101 @@ const (
 	RAM_START uint16 = 0xa000
 	RAM_END   uint16 = 0xbfff
 
-	WRAM_BANK_0_START uint16 = 0xc000
-	WRAM_BANK_0_END   uint16 = 0xcfff
-	WRAM_BANK_1_START uint16 = 0xd000
-	WRAM_BANK_1_END   uint16 = 0xdfff
+	WRAM_START uint16 = 0xc000
+	WRAM_END   uint16 = 0xdfff
 
 	OAM_START uint16 = 0xfe00
 	OAM_END   uint16 = 0xfe9f
 
-	NOT_USABLE_START uint16 = 0xfea0
-	NOT_USABLE_END   uint16 = 0xfeff
-
-	IO_REG_START uint16 = 0xff00
-	IO_REG_END   uint16 = 0xff7f
+	IO_START uint16 = 0xff00
+	IO_END   uint16 = 0xff7f
 
 	HRAM_START uint16 = 0xff80
 	HRAM_END   uint16 = 0xfffe
-
-	IE_REG = 0xfff
 )
 
-type Memory struct{}
+// Memory represents gb memory.
+type Memory struct {
+	ram [0x2000]uint8
+
+	// wram represents working ram.
+	wram [0x2000]uint8
+
+	// hram represents high ram.
+	hram [0x80]uint8
+
+	// vram represents video ram.
+	vram [0x2000]uint8
+
+	// oams represents object attribute memory.
+	oams [40]uint8
+}
 
 var memory = &Memory{}
 
+// read reads from memory address.
 func (m *Memory) read(addr uint16) uint8 {
-	if addr < CARTRIDGE_BANK_1_END {
+	switch {
+	case addr <= CARTRIDGE_END:
 		return cartridge.read(addr)
-	}
 
-	if addr < VRAM_END {
+	case addr <= VRAM_END:
+		return m.vram[addr-VRAM_START]
+
+	case addr <= RAM_END:
+		return m.ram[addr-RAM_START]
+
+	case addr <= WRAM_END:
+		return m.wram[addr-WRAM_START]
+
+	case addr <= OAM_END:
+		return m.oams[addr-OAM_START]
+
+	case addr <= IO_END:
 		// TODO
 		return 0
-	}
 
-	if addr < RAM_END {
-		// TODO
+	case addr <= HRAM_END:
+		return m.hram[addr-HRAM_START]
+
+	default:
+		log.Fatalf("Invalid memory address 0%d", addr)
 		return 0
 	}
-
-	if addr < WRAM_BANK_1_END {
-		return ram.readWram(addr)
-	}
-
-	if addr < OAM_END {
-		// TODO
-		return 0
-	}
-
-	if addr < NOT_USABLE_END {
-		// TODO
-		return 0
-	}
-
-	if addr < IO_REG_END {
-		// TODO
-		return 0
-	}
-
-	if addr < HRAM_END {
-		return ram.readHram(addr)
-	}
-
-	if addr < IE_REG {
-		// TODO
-		return 0
-	}
-
-	return 0
 }
 
+// write writes value into memory address.
 func (m *Memory) write(addr uint16, val uint8) {
-	if addr < CARTRIDGE_BANK_1_END {
+	switch {
+	case addr <= CARTRIDGE_END:
 		cartridge.write(addr, val)
-	}
+		break
 
-	if addr < VRAM_END {
+	case addr <= VRAM_END:
+		m.vram[addr-VRAM_START] = val
+		break
+
+	case addr <= RAM_END:
+		m.ram[addr-RAM_START] = val
+		break
+
+	case addr <= WRAM_END:
+		m.wram[addr-WRAM_START] = val
+		break
+
+	case addr <= OAM_END:
+		m.oams[addr-OAM_START] = val
+		break
+
+	case addr <= IO_END:
 		// TODO
-	}
+		break
 
-	if addr < RAM_END {
-		// TODO
-	}
+	case addr <= HRAM_END:
+		m.hram[addr-HRAM_START] = val
+		break
 
-	if addr < WRAM_BANK_1_END {
-		ram.writeWram(addr, val)
-	}
-
-	if addr < OAM_END {
-		// TODO
-	}
-
-	if addr < NOT_USABLE_END {
-		// TODO
-	}
-
-	if addr < IO_REG_END {
-		// TODO
-	}
-
-	if addr < HRAM_END {
-		ram.writeHram(addr, val)
-	}
-
-	if addr < IE_REG {
-		// TODO
+	default:
+		log.Fatalf("Invalid memory address 0%d", addr)
 	}
 }
