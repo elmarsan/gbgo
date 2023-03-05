@@ -7,7 +7,7 @@ type Gameboy struct{}
 var gameboy = &Gameboy{}
 
 func (g *Gameboy) Run(rom string) {
-	err := cartridge.Load(rom)
+	err := cartridge.load(rom)
 	if err != nil {
 		log.Fatal(err)
 	}

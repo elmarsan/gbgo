@@ -127,7 +127,7 @@ var catridgeTypes = [0x100]string{
 	0xff: "HuC1+RAM+BATTERY",
 }
 
-func (c Cartridge) Type() string {
+func (c Cartridge) getType() string {
 	cartridgeType := catridgeTypes[c.header.catridgeType]
 
 	if cartridgeType != "" {
@@ -137,7 +137,7 @@ func (c Cartridge) Type() string {
 	return fmt.Sprintf("Unknown cartridge type (0x%d)", c.header.catridgeType)
 }
 
-func (c *Cartridge) Load(p string) error {
+func (c *Cartridge) load(p string) error {
 	d, err := os.ReadFile(p)
 	if err != nil {
 		return err
@@ -163,6 +163,10 @@ func (c *Cartridge) Load(p string) error {
 	return nil
 }
 
-func (c *Cartridge) Read(addr uint16) uint8 {
+func (c *Cartridge) read(addr uint16) uint8 {
 	return c.data[addr]
+}
+
+func (c *Cartridge) write(addr uint16, val uint8) {
+	c.data[addr] = val
 }
