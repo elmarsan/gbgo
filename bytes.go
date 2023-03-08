@@ -48,3 +48,13 @@ func readBit(b uint8, pos uint8) bool {
 	bit := b & (1 << pos)
 	return (bit > 0)
 }
+
+// bitVal returns value of bit at pos of b. (1 or 0)
+func bitVal(b uint8, pos uint8) uint8 {
+	isSet := readBit(b, pos)
+	if isSet {
+		return 1
+	}
+
+	return 0
+}
