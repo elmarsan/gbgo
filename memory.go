@@ -15,6 +15,9 @@ const (
 	WRAM_START uint16 = 0xc000
 	WRAM_END   uint16 = 0xdfff
 
+	ECHO_START uint16 = 0xe000
+	ECHO_END   uint16 = 0xfdff
+
 	OAM_START uint16 = 0xfe00
 	OAM_END   uint16 = 0xfe9f
 
@@ -23,6 +26,8 @@ const (
 
 	HRAM_START uint16 = 0xff80
 	HRAM_END   uint16 = 0xfffe
+
+	IE_REG uint16 = 0xffff
 )
 
 // Memory represents gb memory.
@@ -38,8 +43,14 @@ type Memory struct {
 	// vram represents video ram.
 	vram [0x2000]uint8
 
-	// oams represents object attribute memory.
-	oams [40]uint8
+	// oam represents object attribute memory.
+	oam [40]uint8
+
+	// io represents hardware register
+	io [43]uint8
+
+	// ie represents interrupt enable register
+	ie uint8
 }
 
 var memory = &Memory{}
@@ -59,18 +70,24 @@ func (m *Memory) read(addr uint16) uint8 {
 	case addr <= WRAM_END:
 		return m.wram[addr-WRAM_START]
 
+		// prohibited area
+	case addr <= ECHO_END:
+		return 0
+
 	case addr <= OAM_END:
-		return m.oams[addr-OAM_START]
+		return m.oam[addr-OAM_START]
 
 	case addr <= IO_END:
-		// TODO
-		return 0
+		return m.io[addr-IO_START]
 
 	case addr <= HRAM_END:
 		return m.hram[addr-HRAM_START]
 
+	case addr == IE_REG:
+		return m.ie
+
 	default:
-		log.Fatalf("Invalid memory address 0%d", addr)
+		log.Fatalf("Invalid memory address 0%x", addr)
 		return 0
 	}
 }
@@ -94,19 +111,27 @@ func (m *Memory) write(addr uint16, val uint8) {
 		m.wram[addr-WRAM_START] = val
 		break
 
+		// prohibited area
+	case addr <= ECHO_END:
+		break
+
 	case addr <= OAM_END:
-		m.oams[addr-OAM_START] = val
+		m.oam[addr-OAM_START] = val
 		break
 
 	case addr <= IO_END:
-		// TODO
+		m.hram[addr-IO_START] = val
 		break
 
 	case addr <= HRAM_END:
 		m.hram[addr-HRAM_START] = val
 		break
 
+	case addr == IE_REG:
+		m.ie = val
+		break
+
 	default:
-		log.Fatalf("Invalid memory address 0%d", addr)
+		log.Fatalf("Invalid memory address 0%x", addr)
 	}
 }

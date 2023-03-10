@@ -1,6 +1,8 @@
 package main
 
-import "log"
+import (
+	"fmt"
+)
 
 // CPU represents gameboy central processing unit.
 type CPU struct {
@@ -24,6 +26,8 @@ type CPU struct {
 	ime bool  // Interrup master enable flag
 	ie  uint8 // Interrup enable
 	iF  uint8 // Interrup flag
+
+	running bool
 }
 
 // CPU8Register represents 8 bit register.
@@ -54,15 +58,27 @@ const (
 	REG_SP
 )
 
-var cpu = &CPU{
-	pc: 0x100,
+var cpu = &CPU{}
+
+func (cpu *CPU) init() {
+	cpu.pc = 0x100
+	cpu.sp = 0xfffe
+	cpu.set16Reg(REG_AF, 0xb001)
+	cpu.set16Reg(REG_BC, 0x1300)
+	cpu.set16Reg(REG_DE, 0xd800)
+	cpu.set16Reg(REG_HL, 0x4d01)
+
+	cpu.setIME(false)
 }
 
-// cycle executes next instruction.
-func (cpu *CPU) cycle() {
-	opcode := memory.read(cpu.readPc())
-	log.Printf("Executing opcode 0x%x", opcode)
+// execute executes next instruction.
+func (cpu *CPU) execute() {
+	pc := cpu.readPc()
+	opcode := memory.read(pc)
+	fmt.Printf("Execute pc: 0x%x, 0x%02x: ", pc, opcode)
+
 	instructions[opcode]()
+	fmt.Println()
 }
 
 // readPc returns current value of pc and increments it.
@@ -536,9 +552,9 @@ func (cpu *CPU) pushSp(a CPU16Register) {
 // popSp pops memory address from top of the stack pointer.
 // It reads the value of the address and stores in a register.
 func (cpu *CPU) popSp(a CPU16Register) {
+	lsb := memory.read(cpu.sp)
 	msb := memory.read(cpu.sp + 1)
-	lsb := memory.read(cpu.sp + 2)
-	val := joinUint8(msb, lsb)
+	val := joinUint8(lsb, msb)
 
 	cpu.set16Reg(a, val)
 	cpu.set16Reg(REG_SP, cpu.sp+2)

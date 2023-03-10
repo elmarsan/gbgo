@@ -160,6 +160,10 @@ func (c *Cartridge) load(p string) error {
 
 	c.header.checksum = checksum
 
+	if c.header.checksum != (checksum & 0xff) {
+		return fmt.Errorf("Unable to load rom")
+	}
+
 	return nil
 }
 

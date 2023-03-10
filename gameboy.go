@@ -15,6 +15,6 @@ func (g *Gameboy) Run(rom string) {
 	log.Printf("Rom %s loaded", rom)
 
 	for {
-		cpu.cycle()
+		cpu.execute()
 	}
 }
