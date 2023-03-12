@@ -1,9 +1,5 @@
 package main
 
-import (
-	"fmt"
-)
-
 // CPU represents gameboy central processing unit.
 type CPU struct {
 	a uint8
@@ -17,11 +13,6 @@ type CPU struct {
 
 	sp uint16
 	pc uint16
-
-	zFlag bool
-	nFlag bool
-	hFlag bool
-	cFlag bool
 
 	ime bool  // Interrup master enable flag
 	ie  uint8 // Interrup enable
@@ -58,27 +49,36 @@ const (
 	REG_SP
 )
 
+type CPUFlag int
+
+const (
+	C CPUFlag = iota // bit 4
+	H                // bit 5
+	N                // bit 6
+	Z                // bit 7
+)
+
 var cpu = &CPU{}
 
 func (cpu *CPU) init() {
-	cpu.pc = 0x100
+	cpu.a = 0x01
+	cpu.f = 0xb0
+	cpu.b = 0x00
+	cpu.c = 0x13
+	cpu.d = 0x00
+	cpu.e = 0xd8
+	cpu.h = 0x01
+	cpu.l = 0x4d
 	cpu.sp = 0xfffe
-	cpu.set16Reg(REG_AF, 0xb001)
-	cpu.set16Reg(REG_BC, 0x1300)
-	cpu.set16Reg(REG_DE, 0xd800)
-	cpu.set16Reg(REG_HL, 0x4d01)
-
-	cpu.setIME(false)
+	cpu.pc = 0x0100
 }
 
 // execute executes next instruction.
 func (cpu *CPU) execute() {
+	logState()
 	pc := cpu.readPc()
 	opcode := memory.read(pc)
-	fmt.Printf("Execute pc: 0x%x, 0x%02x: ", pc, opcode)
-
 	instructions[opcode]()
-	fmt.Println()
 }
 
 // readPc returns current value of pc and increments it.
@@ -213,282 +213,166 @@ func (cpu *CPU) load16RegD16(a CPU16Register, d16 uint16) {
 // inc8Reg increments 8 bit register.
 // It stores in a register a (a + 1) and sets flags.
 func (cpu *CPU) inc8Reg(a CPU8Register) {
-	val := cpu.read8Reg(a)
-	inc := val + 1
-
+	reg := cpu.read8Reg(a)
+	inc := reg + 1
 	cpu.set8Reg(a, inc)
 
-	cpu.zFlag = val == 0
-	cpu.nFlag = false
-	cpu.hFlag = (val & 0x0f) == 0
+	cpu.setFlag(N, false)
+	cpu.setFlag(H, (reg&0xf)+1 > 0xf)
+	cpu.setFlag(Z, inc == 0)
 }
 
 // dec8Reg decrements 8 bit register.
 // It stores in a register a (a - 1) and sets flags.
-func (cpu *CPU) dec8Reg(reg CPU8Register) {
-	val := cpu.read8Reg(reg)
-	val -= 1
+func (cpu *CPU) dec8Reg(a CPU8Register) {
+	reg := cpu.read8Reg(a)
+	dec := reg - 1
+	cpu.set8Reg(a, dec)
 
-	cpu.set8Reg(reg, val)
-
-	cpu.zFlag = val == 0
-	cpu.nFlag = true
-	cpu.hFlag = (val & 0x0f) == 0
+	cpu.setFlag(N, true)
+	cpu.setFlag(H, (reg&0xf) == 0)
+	cpu.setFlag(Z, dec == 0)
 }
 
 // inc16reg increments 16 bit register.
 // It stores in a register a (a + 1) and sets flags.
 func (cpu *CPU) inc16reg(reg CPU16Register, setFlags bool) {
 	val := cpu.read16Reg(reg)
-	val += 1
-	cpu.set16Reg(reg, val)
+	inc := val + 1
+	cpu.set16Reg(reg, inc)
 
 	if setFlags {
-		cpu.zFlag = val == 0
-		cpu.nFlag = true
-		cpu.hFlag = (val & 0x0f) == 0
+		cpu.setFlag(N, false)
+		cpu.setFlag(H, (val&0x00ff)+1 > 0xff)
+		cpu.setFlag(Z, inc == 0)
 	}
 }
 
 // dec16Reg decrements 16 bit register.
 // It stores in a register a (a - 1) and sets flags.
 func (cpu *CPU) dec16Reg(a CPU16Register) {
-	val := cpu.read16Reg(a)
-	dec := val - 1
-
+	reg := cpu.read16Reg(a)
+	dec := reg - 1
 	cpu.set16Reg(a, dec)
 
-	cpu.zFlag = dec == 0
-	cpu.nFlag = true
-	cpu.hFlag = (dec & 0x0f) > 0
+	cpu.setFlag(N, true)
+	cpu.setFlag(H, (reg&0x00ff) == 0)
+	cpu.setFlag(Z, dec == 0)
 }
 
-// add8Reg adds b to a.
-// It stores in a register a (a + b) and sets flags.
-func (cpu *CPU) add8Reg(a CPU8Register, b CPU8Register) {
-	add := cpu.read8Reg(a) + cpu.read8Reg(b)
-	cpu.set8Reg(a, add)
+// add8Reg adds val to register a.
+// It stores in a register a (a + val) and sets flags.
+func (cpu *CPU) add8Reg(a CPU8Register, val uint8) {
+	reg := cpu.read8Reg(a)
+	add := uint16(reg) + uint16(val)
+	cpu.set8Reg(a, uint8(add))
 
-	cpu.zFlag = add == 0
-	cpu.nFlag = false
-	cpu.cFlag = add > 0xff
-	cpu.hFlag = add > 0xf
+	cpu.setFlag(C, add > 0xff)
+	cpu.setFlag(N, false)
+	cpu.setFlag(H, (val&0xF)+(reg&0xF) > 0xF)
+	cpu.setFlag(Z, add == 0)
 }
 
-// add16Reg adds b to a.
-// It stores in a register a (a + b) and sets flags.
-func (cpu *CPU) add16Reg(a CPU16Register, b CPU16Register) {
-	add := cpu.read16Reg(a) + cpu.read16Reg(b)
+// add16Reg add val to register a.
+// It stores in a register a (a + val) and sets flags.
+func (cpu *CPU) add16Reg(a CPU16Register, val uint16) {
+	reg := cpu.read16Reg(a)
+	add := reg + val
 	cpu.set16Reg(a, add)
 
-	cpu.zFlag = false
-	cpu.nFlag = false
-	cpu.cFlag = add > 0xffff
-	cpu.hFlag = (add & 0x00ff) > 0xff
+	cpu.setFlag(C, add > 0xffff)
+	cpu.setFlag(N, false)
+	cpu.setFlag(H, (reg&0xFFF) > (add&0xFFF))
+	cpu.setFlag(Z, add == 1)
 }
 
-// add8RegD8 add d8 into a.
-// It stores in a register a (a + d8) and sets flags.
-func (cpu *CPU) add8RegD8(a CPU8Register, d8 uint8) {
-	add := cpu.read8Reg(a) + d8
+// adc8Reg add register a, val and carry flag.
+// It stores in a register a (a + val + carry flag) and sets flags.
+func (cpu *CPU) adc8Reg(a CPU8Register, val uint8) {
+	reg := cpu.read8Reg(a)
+	carry := readBit(cpu.f, 4)
+	add := reg + val + carry
 	cpu.set8Reg(a, add)
 
-	cpu.zFlag = add == 0
-	cpu.nFlag = false
-	cpu.cFlag = add > 0xff
-	cpu.hFlag = (add & 0x0f) > 0xf
+	cpu.setFlag(C, add > 0xff)
+	cpu.setFlag(N, false)
+	cpu.setFlag(H, ((reg&0x0f)+(val&0x0f)+carry) > 0x0f)
+	cpu.setFlag(Z, add == 0)
 }
 
-// add16RegD8 add d8 into a.
-// It stores in a register a (a + d8) and sets flags.
-func (cpu *CPU) add16RegD8(a CPU16Register, d8 uint8) {
-	add := cpu.read16Reg(a) + uint16(d8)
-	cpu.set16Reg(a, add)
-
-	cpu.zFlag = false
-	cpu.nFlag = false
-	cpu.cFlag = add > 0xffff
-	cpu.hFlag = (add & 0x00ff) > 0xff
-}
-
-// adc8Reg add b + carry flag into a.
-// It stores in a register a (a + b + carry flag) and sets flags.
-func (cpu *CPU) adc8Reg(a CPU8Register, b CPU8Register) {
-	add := cpu.read8Reg(a) + cpu.read8Reg(b)
-	if cpu.cFlag {
-		add += 1
-	}
-	cpu.set8Reg(a, add)
-
-	cpu.zFlag = add == 0
-	cpu.nFlag = false
-	cpu.cFlag = add > 0xff
-	cpu.hFlag = (add & 0x0f) > 0xf
-}
-
-// adc8RegD8 add d8 + carry flag into a.
-// It stores in a register a (a + d8 + carry flag) and sets flags.
-func (cpu *CPU) adc8RegD8(a CPU8Register, d8 uint8) {
-	add := cpu.read8Reg(a) + d8
-	if cpu.cFlag {
-		add += 1
-	}
-	cpu.set8Reg(a, add)
-
-	cpu.zFlag = add == 0
-	cpu.nFlag = false
-	cpu.cFlag = add > 0xff
-	cpu.hFlag = (add & 0x0f) > 0xf
-}
-
-// sub8Reg subtracts b to a.
-// It stores in register a (a - b) and sets flags.
-func (cpu *CPU) sub8Reg(a CPU8Register, b CPU8Register) {
-	sub := cpu.read8Reg(a) - cpu.read8Reg(b)
+// sub8Reg subtracts register a and val.
+// It stores in register a (a - val) and sets flags.
+func (cpu *CPU) sub8Reg(a CPU8Register, val uint8) {
+	reg := cpu.read8Reg(a)
+	sub := reg - val
 	cpu.set8Reg(a, sub)
 
-	cpu.zFlag = sub == 0
-	cpu.nFlag = true
-	cpu.cFlag = sub > 0xff
-	cpu.hFlag = (sub & 0x0f) == 0
+	cpu.setFlag(C, sub > 0xff)
+	cpu.setFlag(N, true)
+	cpu.setFlag(H, (sub&0x0f) == 0)
+	cpu.setFlag(Z, sub == 0)
 }
 
-// sub8RegD8 subtracts d8 to a.
-// It stores in register a (a - d8) and sets flags.
-func (cpu *CPU) sub8RegD8(a CPU8Register, d8 uint8) {
-	val := cpu.read8Reg(a)
-	sub := val - d8
+// sbc8Reg subtracts register a, val and carry flag.
+// It stores in register a (a - val - carry) and sets flags.
+func (cpu *CPU) sbc8Reg(a CPU8Register, val uint8) {
+	reg := cpu.read8Reg(a)
+	carry := readBit(cpu.f, 4)
+	sub := reg - val - carry
 	cpu.set8Reg(a, sub)
 
-	cpu.zFlag = sub == 0
-	cpu.nFlag = true
-	cpu.cFlag = sub > 0xff
-	cpu.hFlag = (sub & 0x0f) == 0
+	cpu.setFlag(C, sub > 0xff)
+	cpu.setFlag(N, true)
+	cpu.setFlag(H, (sub&0x0f) == 0)
+	cpu.setFlag(Z, sub == 0)
 }
 
-// sbc8Reg subtracts d8 and carry flag to a.
-// It stores in register a (a - d8 - carry flag) and sets flags.
-func (cpu *CPU) sbc8Reg(a CPU8Register, b CPU8Register) {
-	sub := cpu.read8Reg(a) - cpu.read8Reg(b)
-	if cpu.cFlag {
-		sub -= 1
-	}
-	cpu.set8Reg(a, sub)
-
-	cpu.zFlag = sub == 0
-	cpu.nFlag = true
-	cpu.cFlag = sub > 0xff
-	cpu.hFlag = (sub & 0x0f) == 0
-}
-
-// sbc8RegD8 subtracts d8 and carry flag to a.
-// It stores in register a (a - d8) and sets flags.
-func (cpu *CPU) sbc8RegD8(a CPU8Register, d8 uint8) {
-	val := cpu.read8Reg(a)
-	sub := val - d8
-	if cpu.cFlag {
-		sub -= 1
-	}
-	cpu.set8Reg(a, sub)
-
-	cpu.zFlag = sub == 0
-	cpu.nFlag = true
-	cpu.cFlag = sub > 0xff
-	cpu.hFlag = (sub & 0x0f) == 0
-}
-
-// and8Reg performs bitwise AND between a and b.
-// It stores in register a (a & b) and set flags.
-func (cpu *CPU) and8Reg(a CPU8Register, b CPU8Register) {
-	and := cpu.read8Reg(a) & cpu.read8Reg(b)
+// and8Reg performs bitwise AND between register  and val.
+// It stores in register a (a & val) and set flags.
+func (cpu *CPU) and8Reg(a CPU8Register, val uint8) {
+	and := cpu.read8Reg(a) & val
 	cpu.set8Reg(a, and)
 
-	cpu.zFlag = and == 0
-	cpu.nFlag = false
-	cpu.cFlag = false
-	cpu.hFlag = true
+	cpu.setFlag(C, false)
+	cpu.setFlag(N, false)
+	cpu.setFlag(H, true)
+	cpu.setFlag(Z, and == 0)
 }
 
-// and8RegD8 performs bitwise AND between a and d8.
-// It stores in register a (a & d8) and set flags.
-func (cpu *CPU) and8RegD8(a CPU8Register, d8 uint8) {
-	and := cpu.read8Reg(a) & d8
-	cpu.set8Reg(a, and)
+// xor8Reg performs bitwise XOR between register a and val.
+// It stores in register a (a ^ val) and set flags.
+func (cpu *CPU) xor8Reg(a CPU8Register, val uint8) {
+	xor := cpu.read8Reg(a) ^ val
+	cpu.set8Reg(a, xor)
 
-	cpu.zFlag = and == 0
-	cpu.nFlag = false
-	cpu.cFlag = false
-	cpu.hFlag = true
+	cpu.setFlag(C, false)
+	cpu.setFlag(N, false)
+	cpu.setFlag(H, false)
+	cpu.setFlag(Z, xor == 0)
 }
 
-// xor8Reg performs bitwise XOR between a and b.
-// It stores in register a (a ^ b) and set flags.
-func (cpu *CPU) xor8Reg(a CPU8Register, b CPU8Register) {
-	xorg := cpu.read8Reg(a) ^ cpu.read8Reg(b)
-	cpu.set8Reg(a, xorg)
-
-	cpu.zFlag = xorg == 0
-	cpu.nFlag = false
-	cpu.cFlag = false
-	cpu.hFlag = false
-}
-
-// xor8RegD8 performs bitwise XOR between a and d8.
-// It stores in register a (a ^ d8) and set flags.
-func (cpu *CPU) xor8RegD8(a CPU8Register, d8 uint8) {
-	xorg := cpu.read8Reg(a) ^ d8
-	cpu.set8Reg(a, xorg)
-
-	cpu.zFlag = xorg == 0
-	cpu.nFlag = false
-	cpu.cFlag = false
-	cpu.hFlag = false
-}
-
-// or8Reg performs bitwise OR between a and b.
-// It stores in register a (a | b) and set flags.
-func (cpu *CPU) or8Reg(a CPU8Register, b CPU8Register) {
-	or := cpu.read8Reg(a) | cpu.read8Reg(b)
+// or8RegD8 performs bitwise OR between register a and val.
+// It stores in register a (a | val) and set flags.
+func (cpu *CPU) or8Reg(a CPU8Register, val uint8) {
+	or := cpu.read8Reg(a) | val
 	cpu.set8Reg(a, or)
 
-	cpu.zFlag = or == 0
-	cpu.nFlag = false
-	cpu.cFlag = false
-	cpu.hFlag = false
+	cpu.setFlag(C, false)
+	cpu.setFlag(N, false)
+	cpu.setFlag(H, false)
+	cpu.setFlag(Z, or == 0)
 }
 
-// or8RegD8 performs bitwise OR between a and d8.
-// It stores in register a (a | d8) and set flags.
-func (cpu *CPU) or8RegD8(a CPU8Register, d8 uint8) {
-	or := cpu.read8Reg(a) | d8
-	cpu.set8Reg(a, or)
-
-	cpu.zFlag = or == 0
-	cpu.nFlag = false
-	cpu.cFlag = false
-	cpu.hFlag = false
-}
-
-// cp8Reg compares the values of register a and b.
+// cp8Reg compares the values of register a and val.
 // It set flags.
-func (cpu *CPU) cp8Reg(a CPU8Register, b CPU8Register) {
-	sub := cpu.read8Reg(a) - cpu.read8Reg(b)
+func (cpu *CPU) cp8Reg(a CPU8Register, val uint8) {
+	reg := cpu.read8Reg(a)
+	sub := val - reg
 
-	cpu.zFlag = sub == 0
-	cpu.nFlag = true
-	cpu.cFlag = sub > 0xff
-	cpu.hFlag = (sub & 0x0f) == 0
-}
-
-// cp8RegD8 compares the values of register a and d8.
-// It set flags.
-func (cpu *CPU) cp8RegD8(a CPU8Register, d8 uint8) {
-	sub := cpu.read8Reg(a) - d8
-
-	cpu.zFlag = sub == 0
-	cpu.nFlag = true
-	cpu.cFlag = sub > 0xff
-	cpu.hFlag = (sub & 0x0f) == 0
+	cpu.setFlag(C, reg > val)
+	cpu.setFlag(N, true)
+	cpu.setFlag(H, (reg&0x0f) > (val&0x0f))
+	cpu.setFlag(Z, sub == 0)
 }
 
 // rlc8Reg rotate A left
@@ -496,7 +380,7 @@ func (cpu *CPU) cp8RegD8(a CPU8Register, d8 uint8) {
 func (cpu *CPU) rlc8Reg(a CPU8Register) {
 	val := cpu.read8Reg(a)
 	cpu.set8Reg(a, rotateLeft(val, 1))
-	cpu.cFlag = readBit(val, 7)
+	// cpu.cFlag = readBit(val, 7) == 1
 }
 
 // rl8Reg rotate A left through carry
@@ -506,14 +390,14 @@ func (cpu *CPU) rl8Reg(a CPU8Register) {
 	val := cpu.read8Reg(a)
 	rotated := rotateLeft(val, 1)
 
-	if cpu.cFlag {
+	if cpu.readFlag(C) == 1 {
 		setBit(rotated, 7)
 	} else {
 		clearBit(rotated, 7)
 	}
 
 	cpu.set8Reg(a, rotated)
-	cpu.cFlag = readBit(rotated, 7)
+	cpu.setFlag(C, readBit(rotated, 7) == 1)
 }
 
 // rrc8Reg rotate A RIGHT
@@ -521,7 +405,7 @@ func (cpu *CPU) rl8Reg(a CPU8Register) {
 func (cpu *CPU) rrc8Reg(a CPU8Register) {
 	val := cpu.read8Reg(a)
 	cpu.set8Reg(a, rotateRight(val, 1))
-	cpu.cFlag = readBit(val, 0)
+	cpu.setFlag(C, readBit(val, 0) == 1)
 }
 
 // rr8Reg rotate A right through carry
@@ -531,14 +415,14 @@ func (cpu *CPU) rr8Reg(a CPU8Register) {
 	val := cpu.read8Reg(a)
 	rotated := rotateRight(val, 1)
 
-	if cpu.cFlag {
+	if cpu.readFlag(C) == 1 {
 		setBit(rotated, 0)
 	} else {
 		clearBit(rotated, 0)
 	}
 
 	cpu.set8Reg(a, rotated)
-	cpu.cFlag = readBit(rotated, 0)
+	cpu.setFlag(C, readBit(rotated, 0) == 1)
 }
 
 // pushSp pushes a register on top of the stack pointer.
@@ -546,7 +430,7 @@ func (cpu *CPU) pushSp(a CPU16Register) {
 	val := cpu.read16Reg(a)
 	memory.write(cpu.sp-1, hi(val))
 	memory.write(cpu.sp-2, lo(val))
-	cpu.set16Reg(REG_SP, cpu.sp-2)
+	cpu.sp -= 2
 }
 
 // popSp pops memory address from top of the stack pointer.
@@ -554,18 +438,10 @@ func (cpu *CPU) pushSp(a CPU16Register) {
 func (cpu *CPU) popSp(a CPU16Register) {
 	lsb := memory.read(cpu.sp)
 	msb := memory.read(cpu.sp + 1)
-	val := joinUint8(lsb, msb)
+	val := joinUint8(msb, lsb)
 
 	cpu.set16Reg(a, val)
-	cpu.set16Reg(REG_SP, cpu.sp+2)
-
-	if a == REG_AF {
-		flags := cpu.read8Reg(REG_F)
-		cpu.cFlag = readBit(flags, 4)
-		cpu.hFlag = readBit(flags, 5)
-		cpu.nFlag = readBit(flags, 6)
-		cpu.zFlag = readBit(flags, 7)
-	}
+	cpu.sp += 2
 }
 
 // setIME sets IME flag.
@@ -588,4 +464,44 @@ func (cpu *CPU) call(addr uint16) {
 // ret returns from function.
 func (cpu *CPU) ret() {
 	cpu.popSp(REG_PC)
+}
+
+func (cpu *CPU) setFlag(f CPUFlag, val bool) {
+	var bit uint8 = 0
+
+	switch f {
+	case C:
+		bit = 4
+		break
+	case H:
+		bit = 5
+		break
+	case N:
+		bit = 6
+		break
+	case Z:
+		bit = 7
+		break
+	}
+
+	if val {
+		cpu.f = setBit(cpu.f, bit)
+	} else {
+		cpu.f = clearBit(cpu.f, bit)
+	}
+}
+
+func (cpu *CPU) readFlag(f CPUFlag) uint8 {
+	switch f {
+	case C:
+		return readBit(cpu.f, 4)
+	case H:
+		return readBit(cpu.f, 5)
+	case N:
+		return readBit(cpu.f, 6)
+	case Z:
+		return readBit(cpu.f, 7)
+	}
+
+	return 0
 }

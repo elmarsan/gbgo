@@ -102,7 +102,6 @@ var (
 
 func initScreen() error {
 	sdl.Init(sdl.INIT_VIDEO)
-	fmt.Println("SDL INIT")
 
 	var width int32 = 16 * 8 * SCALE
 	var height int32 = 32 * 8 * SCALE

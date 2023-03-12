@@ -68,7 +68,7 @@ func TestReadBit(t *testing.T) {
 
 		enabled := readBit(x, 7)
 
-		if !enabled {
+		if enabled == 0 {
 			t.Error("Wrong bit reading")
 		}
 	})
@@ -78,7 +78,7 @@ func TestReadBit(t *testing.T) {
 
 		enabled := readBit(x, 5)
 
-		if enabled {
+		if enabled == 1 {
 			t.Error("Wrong bit reading")
 		}
 	})
@@ -88,7 +88,7 @@ func TestClearBit(t *testing.T) {
 	x := clearBit(0b11001010, 1)
 
 	enabled := readBit(x, 1)
-	if enabled {
+	if enabled == 1 {
 		t.Error("Wrong bit reading")
 	}
 }

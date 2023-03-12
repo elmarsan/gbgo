@@ -1,6 +1,10 @@
 package main
 
-import "log"
+import (
+	"fmt"
+	"log"
+	"os"
+)
 
 type Gameboy struct{}
 
@@ -9,7 +13,8 @@ var gameboy = &Gameboy{}
 func (g *Gameboy) Run(rom string) {
 	err := cartridge.load(rom)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
+		os.Exit(1)
 	}
 
 	log.Printf("Rom %s loaded", rom)

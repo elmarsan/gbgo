@@ -32,29 +32,15 @@ func rotateRight(b uint8, pos uint8) uint8 {
 
 // setBit sets bit at pos of b.
 func setBit(b uint8, pos uint8) uint8 {
-	b |= pos << b
-	return b
+	return b | (1 << pos)
 }
 
 // clearBit clear bit at pos of b.
 func clearBit(b uint8, pos uint8) uint8 {
-	var mask uint8 = ^(1 << pos)
-	b &= mask
-	return b
+	return b & ^(1 << pos)
 }
 
 // readBit returns state of bit at pos of b.
-func readBit(b uint8, pos uint8) bool {
-	bit := b & (1 << pos)
-	return (bit > 0)
-}
-
-// bitVal returns value of bit at pos of b. (1 or 0)
-func bitVal(b uint8, pos uint8) uint8 {
-	isSet := readBit(b, pos)
-	if isSet {
-		return 1
-	}
-
-	return 0
+func readBit(b uint8, pos uint8) uint8 {
+	return b & (1 << pos)
 }

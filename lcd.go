@@ -17,7 +17,7 @@ var lcd = &LCD{}
 // bit 7 (0=Off, 1=On)
 func (lcd *LCD) isEnabled() bool {
 	reg := memory.read(LCDC)
-	return readBit(reg, 7)
+	return readBit(reg, 7) == 1
 }
 
 // winTileMapArea returns addrRange of window tile map area.
@@ -25,7 +25,7 @@ func (lcd *LCD) isEnabled() bool {
 func (lcd *LCD) winTileMapArea() addrRange {
 	reg := memory.read(LCDC)
 
-	isSet := readBit(reg, 6)
+	isSet := readBit(reg, 6) == 1
 	if !isSet {
 		return addrRange{
 			start: 0x9800,
@@ -43,7 +43,7 @@ func (lcd *LCD) winTileMapArea() addrRange {
 // bit 5 (0=Off, 1=On)
 func (lcd *LCD) isWinEnabled() bool {
 	reg := memory.read(LCDC)
-	return readBit(reg, 5)
+	return readBit(reg, 5) == 1
 }
 
 // bgWinTileDataArea returns addrRange of bg and window tile data area.
@@ -51,7 +51,7 @@ func (lcd *LCD) isWinEnabled() bool {
 func (lcd *LCD) bgWinTileDataArea() addrRange {
 	reg := memory.read(LCDC)
 
-	isSet := readBit(reg, 4)
+	isSet := readBit(reg, 4) == 1
 	if !isSet {
 		return addrRange{
 			start: 0x8800,
@@ -70,7 +70,7 @@ func (lcd *LCD) bgWinTileDataArea() addrRange {
 func (lcd *LCD) bgTileMapArea() addrRange {
 	reg := memory.read(LCDC)
 
-	isSet := readBit(reg, 3)
+	isSet := readBit(reg, 3) == 1
 	if !isSet {
 		return addrRange{
 			start: 0x9800,
@@ -88,19 +88,19 @@ func (lcd *LCD) bgTileMapArea() addrRange {
 // bit 2 of 0xff40 (0=8x8, 1=8x16).
 func objSize() uint8 {
 	reg := memory.read(LCDC)
-	return bitVal(reg, 2)
+	return readBit(reg, 2)
 }
 
 // isObjEnabled returns bool indicating if obj is enabled.
 // bit 1 of 0xff40 (0=Off, 1=On).
 func isObjEnabled() bool {
 	reg := memory.read(LCDC)
-	return readBit(reg, 1)
+	return readBit(reg, 1) == 1
 }
 
 // isObjEnabled returns bool indicating if obj bg and window are enabled.
 // bit 0 of 0xff40 (0=Off, 1=On).
 func isBgAndWinEnabled() bool {
 	reg := memory.read(LCDC)
-	return readBit(reg, 0)
+	return readBit(reg, 0) == 1
 }

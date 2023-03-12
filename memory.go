@@ -1,6 +1,9 @@
 package main
 
-import "log"
+import (
+	"fmt"
+	"os"
+)
 
 // Memory map
 const (
@@ -58,6 +61,10 @@ var memory = &Memory{}
 // read reads from memory address.
 func (m *Memory) read(addr uint16) uint8 {
 	switch {
+	// gameboy-doctor debug
+	case addr == LY:
+		return 0x90
+
 	case addr <= CARTRIDGE_END:
 		return cartridge.read(addr)
 
@@ -87,7 +94,8 @@ func (m *Memory) read(addr uint16) uint8 {
 		return m.ie
 
 	default:
-		log.Fatalf("Invalid memory address 0%x", addr)
+		fmt.Printf("Invalid memory address 0%x", addr)
+		os.Exit(1)
 		return 0
 	}
 }
@@ -132,6 +140,7 @@ func (m *Memory) write(addr uint16, val uint8) {
 		break
 
 	default:
-		log.Fatalf("Invalid memory address 0%x", addr)
+		fmt.Printf("Invalid memory address 0%x", addr)
+		os.Exit(1)
 	}
 }
