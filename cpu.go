@@ -1,5 +1,7 @@
 package main
 
+import "fmt"
+
 // CPU represents gameboy central processing unit.
 type CPU struct {
 	a uint8
@@ -77,6 +79,15 @@ func (cpu *CPU) init() {
 func (cpu *CPU) execute() {
 	logState()
 	pc := cpu.readPc()
+
+	if step == 16442 {
+		fmt.Printf("16442 cpu.execute, pc: %04x\n", cpu.pc)
+	}
+
+	if step == 16443 {
+		fmt.Printf("16443 cpu.execute, pc: %04x\n", cpu.pc)
+	}
+
 	opcode := memory.read(pc)
 	instructions[opcode]()
 }
