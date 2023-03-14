@@ -264,10 +264,10 @@ func (cpu *CPU) dec16Reg(a CPU16Register) {
 // It stores in a register a (a + val) and sets flags.
 func (cpu *CPU) add8Reg(a CPU8Register, val uint8) {
 	reg := cpu.read8Reg(a)
-	add := uint16(reg) + uint16(val)
-	cpu.set8Reg(a, uint8(add))
+	add := reg + val
+	cpu.set8Reg(a, add)
 
-	cpu.setFlag(C, add > 0xff)
+	cpu.setFlag(C, (uint16(reg)+uint16(val)) > 0xff)
 	cpu.setFlag(N, false)
 	cpu.setFlag(H, (val&0xF)+(reg&0xF) > 0xF)
 	cpu.setFlag(Z, add == 0)
@@ -307,9 +307,9 @@ func (cpu *CPU) sub8Reg(a CPU8Register, val uint8) {
 	sub := reg - val
 	cpu.set8Reg(a, sub)
 
-	cpu.setFlag(C, sub > 0xff)
+	cpu.setFlag(C, (int16(reg)-int16(val)) < 0)
 	cpu.setFlag(N, true)
-	cpu.setFlag(H, (sub&0x0f) == 0)
+	cpu.setFlag(H, (int16(reg&0xf)-int16(val&0xf)) < 0)
 	cpu.setFlag(Z, sub == 0)
 }
 
@@ -369,9 +369,9 @@ func (cpu *CPU) cp8Reg(a CPU8Register, val uint8) {
 	reg := cpu.read8Reg(a)
 	sub := val - reg
 
-	cpu.setFlag(C, reg > val)
+	cpu.setFlag(C, (int16(reg)-int16(val)) < 0)
 	cpu.setFlag(N, true)
-	cpu.setFlag(H, (reg&0x0f) > (val&0x0f))
+	cpu.setFlag(H, (int16(reg&0xf)-int16(val&0xf)) < 0)
 	cpu.setFlag(Z, sub == 0)
 }
 
