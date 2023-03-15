@@ -6,7 +6,7 @@ var instructions = [0x100]func(){
 		// LD BC, d16
 		lsb := memory.read(cpu.readPc())
 		msb := memory.read(cpu.readPc())
-		cpu.set16Reg(REG_BC, joinUint8(msb, lsb))
+		cpu.set16Reg(REG_BC, joinu8(msb, lsb))
 	},
 	0x02: func() {
 		// LD (BC), A
@@ -38,7 +38,7 @@ var instructions = [0x100]func(){
 		// LD (a16), SP
 		lsb := memory.read(cpu.readPc())
 		msb := memory.read(cpu.readPc())
-		addr := joinUint8(msb, lsb)
+		addr := joinu8(msb, lsb)
 		memory.write(addr+1, lo(cpu.sp))
 		memory.write(addr, hi(cpu.sp))
 	},
@@ -83,7 +83,7 @@ var instructions = [0x100]func(){
 		// LD DE, d16
 		lsb := memory.read(cpu.pc)
 		msb := memory.read(cpu.pc + 1)
-		cpu.set16Reg(REG_DE, joinUint8(msb, lsb))
+		cpu.set16Reg(REG_DE, joinu8(msb, lsb))
 		cpu.pc += 2
 	},
 	0x12: func() {
@@ -167,7 +167,7 @@ var instructions = [0x100]func(){
 		// LD HL, d16
 		lsb := memory.read(cpu.pc)
 		msb := memory.read(cpu.pc + 1)
-		cpu.set16Reg(REG_HL, joinUint8(msb, lsb))
+		cpu.set16Reg(REG_HL, joinu8(msb, lsb))
 		cpu.pc += 2
 	},
 	0x22: func() {
@@ -257,7 +257,7 @@ var instructions = [0x100]func(){
 		// LD SP, d16
 		lsb := memory.read(cpu.readPc())
 		msb := memory.read(cpu.readPc())
-		cpu.set16Reg(REG_SP, joinUint8(msb, lsb))
+		cpu.set16Reg(REG_SP, joinu8(msb, lsb))
 	},
 	0x32: func() {
 		// LD (HL-), A
@@ -907,7 +907,7 @@ var instructions = [0x100]func(){
 		// JP a16
 		lsb := memory.read(cpu.pc)
 		msb := memory.read(cpu.pc + 1)
-		addr := joinUint8(msb, lsb)
+		addr := joinu8(msb, lsb)
 
 		cpu.jump(addr)
 	},
@@ -918,7 +918,7 @@ var instructions = [0x100]func(){
 		// cpu.pc += 2
 
 		if cpu.readFlag(Z) == 0 {
-			addr := joinUint8(msb, lsb)
+			addr := joinu8(msb, lsb)
 			cpu.call(addr)
 		}
 	},
@@ -962,7 +962,7 @@ var instructions = [0x100]func(){
 		cpu.pc += 2
 
 		if cpu.readFlag(Z) == 1 {
-			addr := joinUint8(msb, lsb)
+			addr := joinu8(msb, lsb)
 			cpu.call(addr)
 		}
 	},
@@ -970,7 +970,7 @@ var instructions = [0x100]func(){
 		// CALL a16
 		lsb := memory.read(cpu.readPc())
 		msb := memory.read(cpu.readPc())
-		addr := joinUint8(msb, lsb)
+		addr := joinu8(msb, lsb)
 		cpu.call(addr)
 	},
 	0xce: func() {
@@ -1010,7 +1010,7 @@ var instructions = [0x100]func(){
 		cpu.pc += 2
 
 		if cpu.readFlag(N) == 0 {
-			addr := joinUint8(msb, lsb)
+			addr := joinu8(msb, lsb)
 			cpu.call(addr)
 		}
 	},
@@ -1053,7 +1053,7 @@ var instructions = [0x100]func(){
 		cpu.pc += 2
 
 		if cpu.readFlag(C) == 1 {
-			addr := joinUint8(msb, lsb)
+			addr := joinu8(msb, lsb)
 			cpu.call(addr)
 		}
 	},
@@ -1072,7 +1072,7 @@ var instructions = [0x100]func(){
 	0xe0: func() {
 		// LDH (a8), A
 		lsb := memory.read(cpu.readPc())
-		addr := joinUint8(0xff, lsb)
+		addr := joinu8(0xff, lsb)
 		memory.write(addr, cpu.read8Reg(REG_A))
 		// cpu.pc += 1
 	},
@@ -1082,7 +1082,7 @@ var instructions = [0x100]func(){
 	},
 	0xe2: func() {
 		// LD (C), A
-		addr := joinUint8(cpu.read8Reg(REG_C), 0xff)
+		addr := joinu8(cpu.read8Reg(REG_C), 0xff)
 		val := cpu.read8Reg(REG_A)
 		memory.write(addr, val)
 	},
@@ -1115,7 +1115,7 @@ var instructions = [0x100]func(){
 		// LD (a16), A
 		lsb := memory.read(cpu.readPc())
 		msb := memory.read(cpu.readPc())
-		addr := joinUint8(msb, lsb)
+		addr := joinu8(msb, lsb)
 		memory.write(addr, cpu.read8Reg(REG_A))
 	},
 	0xee: func() {
@@ -1133,7 +1133,7 @@ var instructions = [0x100]func(){
 	0xf0: func() {
 		// LDH A, (a8)
 		lsb := memory.read(cpu.readPc())
-		addr := joinUint8(0xff, lsb)
+		addr := joinu8(0xff, lsb)
 		cpu.set8Reg(REG_A, memory.read(addr))
 	},
 	0xf1: func() {
@@ -1143,7 +1143,7 @@ var instructions = [0x100]func(){
 	0xf2: func() {
 		// LD A, (C)
 		lsb := cpu.read8Reg(REG_C)
-		addr := joinUint8(0xff, lsb)
+		addr := joinu8(0xff, lsb)
 		val := memory.read(addr)
 		cpu.set8Reg(REG_A, val)
 	},
@@ -1179,7 +1179,7 @@ var instructions = [0x100]func(){
 		// LD A, (a16)
 		lsb := memory.read(cpu.readPc())
 		msb := memory.read(cpu.readPc())
-		addr := joinUint8(msb, lsb)
+		addr := joinu8(msb, lsb)
 		cpu.set8Reg(REG_A, memory.read(addr))
 	},
 	0xfb: func() {

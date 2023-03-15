@@ -2,93 +2,49 @@ package main
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
-func TestReverse(t *testing.T) {
-	var val uint16 = 0xaabb
-	reversed := reverse(val)
+func TestBytes(t *testing.T) {
+	assert := assert.New(t)
 
-	if reversed != 0xbbaa {
-		t.Error("Wrong reverse")
-	}
-}
-
-func TestLo(t *testing.T) {
-	var val uint16 = 0xaabb
-	lo := lo(val)
-
-	if lo != 0xbb {
-		t.Error("Wrong lo")
-	}
-}
-
-func TestHi(t *testing.T) {
-	var val uint16 = 0xaabb
-	hi := hi(val)
-
-	if hi != 0xaa {
-		t.Error("Wrong hi")
-	}
-}
-
-func TestJoinUint8(t *testing.T) {
-	var n1 uint8 = 0x12
-	var n2 uint8 = 0xb8
-
-	var val = joinUint8(n1, n2)
-
-	if val != 0x12b8 {
-		t.Error("Wrong uint8 joining")
-	}
-}
-
-func TestRotateLeft(t *testing.T) {
-	var x uint8 = 0b11001010
-
-	rotated := rotateLeft(x, 4)
-
-	if rotated != 0b10101100 {
-		t.Error("Wrong left rotation")
-	}
-}
-
-func TestRotateRight(t *testing.T) {
-	var x uint8 = 0b11001010
-
-	rotated := rotateRight(x, 2)
-
-	if rotated != 0b10110010 {
-		t.Error("Wrong right rotation")
-	}
-}
-
-func TestReadBit(t *testing.T) {
-	t.Run("Bit enabled", func(t *testing.T) {
-		var x uint8 = 0b11001010
-
-		enabled := readBit(x, 7)
-
-		if enabled == 0 {
-			t.Error("Wrong bit reading")
-		}
+	t.Run("swapNibbleU16", func(t *testing.T) {
+		assert.Equal(swapNibbleU16(0xaabb), uint16(0xbbaa))
 	})
 
-	t.Run("Bit disabled", func(t *testing.T) {
-		var x uint8 = 0b11001010
-
-		enabled := readBit(x, 5)
-
-		if enabled == 1 {
-			t.Error("Wrong bit reading")
-		}
+	t.Run("swapNibbleU8", func(t *testing.T) {
+		assert.Equal(swapNibbleU8(0xef), uint8(0xfe))
 	})
-}
 
-func TestClearBit(t *testing.T) {
-	x := clearBit(0b11001010, 1)
+	t.Run("lo", func(t *testing.T) {
+		assert.Equal(lo(0xaabb), uint8(0xbb))
+	})
 
-	enabled := readBit(x, 1)
-	if enabled == 1 {
-		t.Error("Wrong bit reading")
-	}
+	t.Run("hi", func(t *testing.T) {
+		var val uint16 = 0xaabb
+		assert.Equal(hi(val), uint8(0xaa))
+	})
+
+	t.Run("joinU8", func(t *testing.T) {
+		assert.Equal(joinu8(0x12, 0xb8), uint16(0x12b8))
+	})
+
+	t.Run("rotateLeft", func(t *testing.T) {
+		assert.Equal(rotateLeft(0b11001010, 4), uint8(0b10101100))
+	})
+
+	t.Run("rotateRight", func(t *testing.T) {
+		assert.Equal(rotateRight(0b11001010, 2), uint8(0b10110010))
+	})
+
+	t.Run("readBit", func(t *testing.T) {
+		assert.NotEqual(uint8(readBit(0b11001010, 7)), uint8(0))
+		assert.Equal(uint8(readBit(0b11001010, 5)), uint8(0))
+	})
+
+	t.Run("clearBit", func(t *testing.T) {
+		x := clearBit(0b11001010, 1)
+		assert.Equal(uint8(readBit(x, 1)), uint8(0))
+	})
 }

@@ -118,13 +118,13 @@ func (cpu *CPU) read8Reg(reg CPU8Register) uint8 {
 func (cpu *CPU) read16Reg(reg CPU16Register) uint16 {
 	switch reg {
 	case REG_AF:
-		return joinUint8(cpu.a, cpu.f)
+		return joinu8(cpu.a, cpu.f)
 	case REG_BC:
-		return joinUint8(cpu.b, cpu.c)
+		return joinu8(cpu.b, cpu.c)
 	case REG_DE:
-		return joinUint8(cpu.d, cpu.e)
+		return joinu8(cpu.d, cpu.e)
 	case REG_HL:
-		return joinUint8(cpu.h, cpu.l)
+		return joinu8(cpu.h, cpu.l)
 	case REG_PC:
 		return cpu.pc
 	case REG_SP:
@@ -438,7 +438,7 @@ func (cpu *CPU) pushSp(a CPU16Register) {
 func (cpu *CPU) popSp(a CPU16Register) {
 	lsb := memory.read(cpu.sp)
 	msb := memory.read(cpu.sp + 1)
-	val := joinUint8(msb, lsb)
+	val := joinu8(msb, lsb)
 
 	cpu.set16Reg(a, val)
 	cpu.sp += 2
@@ -504,4 +504,53 @@ func (cpu *CPU) readFlag(f CPUFlag) uint8 {
 	}
 
 	return 0
+}
+
+// bit8Reg performs BIT instruction in register a.
+// It set flags depending on result.
+func (cpu *CPU) bit8Reg(a CPU8Register, bit uint8) {
+	val := readBit(cpu.read8Reg(a), bit)
+	cpu.set8Reg(a, val)
+
+	cpu.setFlag(H, true)
+	cpu.setFlag(Z, val == 0)
+}
+
+// bitHL performs BIT instruction in register HL.
+// It set flags depending on result.
+func (cpu *CPU) bitHL(bit uint8) {
+	hl := cpu.read16Reg(REG_HL)
+	val := memory.read(hl)
+
+	cpu.setFlag(H, true)
+	cpu.setFlag(Z, val == 0)
+}
+
+// swap8Reg performs SWAP instruction in register a.
+// It set flags depending on result.
+func (cpu *CPU) swap8Reg(a CPU8Register) {
+	reg := cpu.read8Reg(a)
+	swap := swapNibbleU8(reg)
+	cpu.set8Reg(a, swap)
+
+	cpu.setFlag(C, false)
+	cpu.setFlag(H, false)
+	cpu.setFlag(N, false)
+	cpu.setFlag(Z, swap == 0)
+
+}
+
+// swapHL performs SWAP instruction in register HL.
+// It set flags depending on result.
+func (cpu *CPU) swapHL() {
+	addr := cpu.read16Reg(REG_HL)
+	val := memory.read(addr)
+	swap := swapNibbleU8(val)
+	memory.write(addr, swap)
+
+	cpu.setFlag(C, false)
+	cpu.setFlag(H, false)
+	cpu.setFlag(N, false)
+	cpu.setFlag(Z, swap == 0)
+
 }

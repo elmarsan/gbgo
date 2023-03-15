@@ -1,8 +1,13 @@
 package main
 
-// reverse reverse uin16 hi and low bits
-func reverse(n uint16) uint16 {
+// swapNibbleU16 swaps low and hi nibbles of uint16.
+func swapNibbleU16(n uint16) uint16 {
 	return ((n & 0xff00) >> 8) | ((n & 0x00ff) << 8)
+}
+
+// swapNibbleU8 swaps low and hi nibbles of uint8.
+func swapNibbleU8(b uint8) uint8 {
+	return ((b & 0xf0) >> 4) | ((b & 0x0f) << 4)
 }
 
 // hi returns high 8 bits of uint16
@@ -15,8 +20,8 @@ func lo(n uint16) uint8 {
 	return uint8(n & 0xff)
 }
 
-// joinUint8 joins two uint8 into uint16
-func joinUint8(hi uint8, lo uint8) uint16 {
+// joinu8 joins two uint8 into uint16
+func joinu8(hi uint8, lo uint8) uint16 {
 	return uint16(hi)<<8 | uint16(lo)
 }
 
