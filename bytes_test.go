@@ -22,8 +22,7 @@ func TestBytes(t *testing.T) {
 	})
 
 	t.Run("hi", func(t *testing.T) {
-		var val uint16 = 0xaabb
-		assert.Equal(hi(val), uint8(0xaa))
+		assert.Equal(hi(0xaabb), uint8(0xaa))
 	})
 
 	t.Run("joinU8", func(t *testing.T) {
