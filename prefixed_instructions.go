@@ -1,6 +1,200 @@
 package main
 
 var prefixedInstructions = [0x100]func(){
+	0x00: func() {
+		// RLC B
+		cpu.rlc8Reg(REG_B)
+	},
+	0x01: func() {
+		// RLC C
+		cpu.rlc8Reg(REG_C)
+	},
+	0x02: func() {
+		// RLC D
+		cpu.rlc8Reg(REG_D)
+	},
+	0x03: func() {
+		// RLC E
+		cpu.rlc8Reg(REG_E)
+	},
+	0x04: func() {
+		// RLC H
+		cpu.rlc8Reg(REG_H)
+	},
+	0x05: func() {
+		// RLC L
+		cpu.rlc8Reg(REG_L)
+	},
+	0x06: func() {
+		// RLC (HL)
+		cpu.rlcHL()
+	},
+	0x07: func() {
+		// RLC A
+		cpu.rlc8Reg(REG_A)
+	},
+	0x08: func() {
+		// RRC B
+		cpu.rrc8Reg(REG_B)
+	},
+	0x09: func() {
+		// RRC C
+		cpu.rrc8Reg(REG_C)
+	},
+	0x0a: func() {
+		// RRC D
+		cpu.rrc8Reg(REG_D)
+	},
+	0x0b: func() {
+		// RRC E
+		cpu.rrc8Reg(REG_E)
+	},
+	0x0c: func() {
+		// RRC H
+		cpu.rrc8Reg(REG_H)
+	},
+	0x0d: func() {
+		// RRC L
+		cpu.rrc8Reg(REG_L)
+	},
+	0x0e: func() {
+		// RRC (HL)
+		cpu.rrcHL()
+	},
+	0x0f: func() {
+		// RRC A
+		cpu.rrc8Reg(REG_A)
+	},
+
+	0x10: func() {
+		// RL B
+		cpu.rl8Reg(REG_B)
+	},
+	0x11: func() {
+		// RL C
+		cpu.rl8Reg(REG_C)
+	},
+	0x12: func() {
+		// RL D
+		cpu.rl8Reg(REG_D)
+	},
+	0x13: func() {
+		// RL E
+		cpu.rl8Reg(REG_E)
+	},
+	0x14: func() {
+		// RL H
+		cpu.rl8Reg(REG_H)
+	},
+	0x15: func() {
+		// RL L
+		cpu.rl8Reg(REG_L)
+	},
+	0x16: func() {
+		// RL (HL)
+		cpu.rlHL()
+	},
+	0x17: func() {
+		// RL A
+		cpu.rl8Reg(REG_A)
+	},
+	0x18: func() {
+		// RR B
+		cpu.rr8Reg(REG_B)
+	},
+	0x19: func() {
+		// RR C
+		cpu.rr8Reg(REG_C)
+	},
+	0x1a: func() {
+		// RR D
+		cpu.rr8Reg(REG_D)
+	},
+	0x1b: func() {
+		// RR E
+		cpu.rr8Reg(REG_E)
+	},
+	0x1c: func() {
+		// RR H
+		cpu.rr8Reg(REG_H)
+	},
+	0x1d: func() {
+		// RR L
+		cpu.rr8Reg(REG_L)
+	},
+	0x1e: func() {
+		// RR (HL)
+		cpu.rrHL()
+	},
+	0x1f: func() {
+		// RR A
+		cpu.rr8Reg(REG_A)
+	},
+
+	0x20: func() {
+		// SLA B
+		cpu.sla8Reg(REG_B)
+	},
+	0x21: func() {
+		// SLA C
+		cpu.sla8Reg(REG_C)
+	},
+	0x22: func() {
+		// SLA D
+		cpu.sla8Reg(REG_D)
+	},
+	0x23: func() {
+		// SLA E
+		cpu.sla8Reg(REG_E)
+	},
+	0x24: func() {
+		// SLA H
+		cpu.sla8Reg(REG_H)
+	},
+	0x25: func() {
+		// SLA L
+		cpu.sla8Reg(REG_L)
+	},
+	0x26: func() {
+		// SLA (HL)
+		cpu.slaHL()
+	},
+	0x27: func() {
+		// SLA A
+		cpu.sla8Reg(REG_A)
+	},
+	0x28: func() {
+		// SRA B
+		cpu.sra8Reg(REG_B)
+	},
+	0x29: func() {
+		// SRA C
+		cpu.sra8Reg(REG_C)
+	},
+	0x2a: func() {
+		// SRA D
+		cpu.sra8Reg(REG_D)
+	},
+	0x2b: func() {
+		// SRA E
+		cpu.sra8Reg(REG_E)
+	},
+	0x2c: func() {
+		// SRA H
+		cpu.sra8Reg(REG_H)
+	},
+	0x2d: func() {
+		// SRA L
+		cpu.sra8Reg(REG_L)
+	},
+	0x2e: func() {
+		// SRA (HL)
+		cpu.sraHL()
+	},
+	0x2f: func() {
+		// SRA A
+		cpu.sra8Reg(REG_A)
+	},
 
 	0x30: func() {
 		// SWAP B
@@ -36,27 +230,35 @@ var prefixedInstructions = [0x100]func(){
 	},
 	0x38: func() {
 		// SRL B
+		cpu.srl8Reg(REG_B)
 	},
 	0x39: func() {
 		// SRL C
+		cpu.srl8Reg(REG_C)
 	},
 	0x3a: func() {
 		// SRL D
+		cpu.srl8Reg(REG_D)
 	},
 	0x3b: func() {
 		// SRL E
+		cpu.srl8Reg(REG_E)
 	},
 	0x3c: func() {
 		// SRL H
+		cpu.srl8Reg(REG_H)
 	},
 	0x3d: func() {
 		// SRL L
+		cpu.srl8Reg(REG_L)
 	},
 	0x3e: func() {
 		// SRL (HL)
+		cpu.srlHL()
 	},
 	0x3f: func() {
 		// SRL A
+		cpu.srl8Reg(REG_A)
 	},
 
 	0x40: func() {

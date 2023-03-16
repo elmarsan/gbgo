@@ -78,7 +78,14 @@ func (cpu *CPU) execute() {
 	logState()
 	pc := cpu.readPc()
 	opcode := memory.read(pc)
-	instructions[opcode]()
+
+	if opcode == 0xcb {
+		pc := cpu.readPc()
+		opcode := memory.read(pc)
+		prefixedInstructions[opcode]()
+	} else {
+		instructions[opcode]()
+	}
 }
 
 // readPc returns current value of pc and increments it.
@@ -375,18 +382,18 @@ func (cpu *CPU) cp8Reg(a CPU8Register, val uint8) {
 	cpu.setFlag(Z, sub == 0)
 }
 
-// rlc8Reg rotate A left
+// rlca8Reg rotate A left
 // It rotates a register 1 bit to the left and set carry flag.
-func (cpu *CPU) rlc8Reg(a CPU8Register) {
+func (cpu *CPU) rlca8Reg(a CPU8Register) {
 	val := cpu.read8Reg(a)
 	cpu.set8Reg(a, rotateLeft(val, 1))
 	// cpu.cFlag = readBit(val, 7) == 1
 }
 
-// rl8Reg rotate A left through carry
+// rla8Reg rotate A left through carry
 // It rotates a register 1 bit to the left and set carry flag.
 // The bit rotated is replaced by carry flag value.
-func (cpu *CPU) rl8Reg(a CPU8Register) {
+func (cpu *CPU) rla8Reg(a CPU8Register) {
 	val := cpu.read8Reg(a)
 	rotated := rotateLeft(val, 1)
 
@@ -400,18 +407,18 @@ func (cpu *CPU) rl8Reg(a CPU8Register) {
 	cpu.setFlag(C, readBit(rotated, 7) == 1)
 }
 
-// rrc8Reg rotate A RIGHT
+// rrca8Reg rotate A RIGHT
 // It rotates a register 1 bit to the right and set carry flag.
-func (cpu *CPU) rrc8Reg(a CPU8Register) {
+func (cpu *CPU) rrca8Reg(a CPU8Register) {
 	val := cpu.read8Reg(a)
 	cpu.set8Reg(a, rotateRight(val, 1))
 	cpu.setFlag(C, readBit(val, 0) == 1)
 }
 
-// rr8Reg rotate A right through carry
+// rra8Reg rotate A right through carry
 // It rotates a register 1 bit to the right and set carry flag.
 // The bit rotated is replaced by carry flag value.
-func (cpu *CPU) rr8Reg(a CPU8Register) {
+func (cpu *CPU) rra8Reg(a CPU8Register) {
 	val := cpu.read8Reg(a)
 	rotated := rotateRight(val, 1)
 
@@ -553,4 +560,200 @@ func (cpu *CPU) swapHL() {
 	cpu.setFlag(N, false)
 	cpu.setFlag(Z, swap == 0)
 
+}
+
+// srl8Reg performs SRL instruction in register a.
+// It set flags depending on result.
+func (cpu *CPU) srl8Reg(a CPU8Register) {
+	reg := cpu.read8Reg(a)
+	carry := readBit(reg, 0)
+	shift := reg >> 1
+	cpu.set8Reg(a, shift)
+
+	cpu.setFlag(C, carry == 1)
+	cpu.setFlag(H, false)
+	cpu.setFlag(N, false)
+	cpu.setFlag(Z, shift == 0)
+}
+
+// srlHL performs SRL instruction in register HL.
+// It set flags depending on result.
+func (cpu *CPU) srlHL() {
+	addr := cpu.read16Reg(REG_HL)
+	val := memory.read(addr)
+	carry := readBit(val, 0)
+	shift := val >> 1
+	memory.write(addr, shift)
+
+	cpu.setFlag(C, carry == 1)
+	cpu.setFlag(H, false)
+	cpu.setFlag(N, false)
+	cpu.setFlag(Z, shift == 0)
+}
+
+// sra8Reg performs SRA instruction in register a.
+// It set flags depending on result.
+func (cpu *CPU) sra8Reg(a CPU8Register) {
+	reg := cpu.read8Reg(a)
+	carry := readBit(reg, 0)
+	shift := reg << 1
+	cpu.set8Reg(a, shift)
+
+	cpu.setFlag(C, carry == 1)
+	cpu.setFlag(H, false)
+	cpu.setFlag(N, false)
+	cpu.setFlag(Z, shift == 0)
+}
+
+// sraHL performs SRA instruction in register HL.
+// It set flags depending on result.
+func (cpu *CPU) sraHL() {
+	addr := cpu.read16Reg(REG_HL)
+	val := memory.read(addr)
+	carry := readBit(val, 0)
+	shift := val << 1
+	memory.write(addr, shift)
+
+	cpu.setFlag(C, carry == 1)
+	cpu.setFlag(H, false)
+	cpu.setFlag(N, false)
+	cpu.setFlag(Z, shift == 0)
+}
+
+// sla8Reg performs SLA instruction in register a.
+// It set flags depending on result.
+func (cpu *CPU) sla8Reg(a CPU8Register) {
+	reg := cpu.read8Reg(a)
+	carry := readBit(reg, 7)
+	shift := (reg << 1) & 0xff
+	cpu.set8Reg(a, shift)
+
+	cpu.setFlag(C, carry == 1)
+	cpu.setFlag(H, false)
+	cpu.setFlag(N, false)
+	cpu.setFlag(Z, shift == 0)
+}
+
+// slaHL performs SLA instruction in register HL.
+// It set flags depending on result.
+func (cpu *CPU) slaHL() {
+	addr := cpu.read16Reg(REG_HL)
+	val := memory.read(addr)
+	carry := readBit(val, 7)
+	shift := (val << 1) & 0xff
+	memory.write(addr, shift)
+
+	cpu.setFlag(C, carry == 1)
+	cpu.setFlag(H, false)
+	cpu.setFlag(N, false)
+	cpu.setFlag(Z, shift == 0)
+}
+
+// rl8Reg performs RL instruction in register a.
+// It set flags depending on result.
+func (cpu *CPU) rl8Reg(a CPU8Register) {
+	reg := cpu.read8Reg(a)
+	shift := (reg<<1)&0xff | cpu.readFlag(C)
+	cpu.set8Reg(a, shift)
+
+	cpu.setFlag(C, readBit(reg, 7) == 1)
+	cpu.setFlag(H, false)
+	cpu.setFlag(N, false)
+	cpu.setFlag(Z, shift == 0)
+}
+
+// rlHL performs RL instruction in register HL.
+// It set flags depending on result.
+func (cpu *CPU) rlHL() {
+	addr := cpu.read16Reg(REG_HL)
+	val := memory.read(addr)
+	shift := (val<<1)&0xff | cpu.readFlag(C)
+	memory.write(addr, val)
+
+	cpu.setFlag(C, readBit(val, 7) == 1)
+	cpu.setFlag(H, false)
+	cpu.setFlag(N, false)
+	cpu.setFlag(Z, shift == 0)
+}
+
+// rr8Reg performs RR instruction in register a.
+// It set flags depending on result.
+func (cpu *CPU) rr8Reg(a CPU8Register) {
+	reg := cpu.read8Reg(a)
+	shift := reg>>1 | (cpu.readFlag(C) << 7)
+	cpu.set8Reg(a, shift)
+
+	cpu.setFlag(C, (reg&1) == 1)
+	cpu.setFlag(H, false)
+	cpu.setFlag(N, false)
+	cpu.setFlag(Z, shift == 0)
+}
+
+// rrHL performs RR instruction in register HL.
+// It set flags depending on result.
+func (cpu *CPU) rrHL() {
+	addr := cpu.read16Reg(REG_HL)
+	val := memory.read(addr)
+	shift := val>>1 | (cpu.readFlag(C) << 7)
+	memory.write(addr, val)
+
+	cpu.setFlag(C, (val&1) == 1)
+	cpu.setFlag(H, false)
+	cpu.setFlag(N, false)
+	cpu.setFlag(Z, shift == 0)
+}
+
+// rlc8Reg performs RLC instruction in register a.
+// It set flags depending on result.
+func (cpu *CPU) rlc8Reg(a CPU8Register) {
+	reg := cpu.read8Reg(a)
+	carry := reg >> 7
+	shift := (reg<<1)&0xff | carry
+
+	cpu.setFlag(C, carry == 1)
+	cpu.setFlag(H, false)
+	cpu.setFlag(N, false)
+	cpu.setFlag(Z, shift == 0)
+}
+
+// rlcHL performs RLC instruction in register HL.
+// It set flags depending on result.
+func (cpu *CPU) rlcHL() {
+	addr := cpu.read16Reg(REG_HL)
+	val := memory.read(addr)
+	carry := val >> 7
+	shift := (val<<1)&0xff | carry
+	memory.write(addr, val)
+
+	cpu.setFlag(C, carry == 1)
+	cpu.setFlag(H, false)
+	cpu.setFlag(N, false)
+	cpu.setFlag(Z, shift == 0)
+}
+
+// rrc8Reg performs RRC instruction in register a.
+// It set flags depending on result.
+func (cpu *CPU) rrc8Reg(a CPU8Register) {
+	reg := cpu.read8Reg(a)
+	shift := reg>>1 | (cpu.readFlag(C) << 7)
+	cpu.set8Reg(a, shift)
+
+	cpu.setFlag(C, (reg&1) == 1)
+	cpu.setFlag(H, false)
+	cpu.setFlag(N, false)
+	cpu.setFlag(Z, shift == 0)
+}
+
+// rrcHL performs RRC instruction in register HL.
+// It set flags depending on result.
+func (cpu *CPU) rrcHL() {
+	addr := cpu.read16Reg(REG_HL)
+	val := memory.read(addr)
+	shift := val>>1 | (cpu.readFlag(C) << 7)
+	memory.write(addr, shift)
+
+	cpu.setFlag(C, (val&1) == 1)
+	cpu.setFlag(H, false)
+	cpu.setFlag(N, false)
+	cpu.setFlag(Z, shift == 0)
 }

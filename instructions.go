@@ -32,7 +32,7 @@ var instructions = [0x100]func(){
 	},
 	0x07: func() {
 		// RLCA
-		cpu.rlc8Reg(REG_A)
+		cpu.rlca8Reg(REG_A)
 	},
 	0x08: func() {
 		// LD (a16), SP
@@ -73,7 +73,7 @@ var instructions = [0x100]func(){
 	},
 	0x0f: func() {
 		// RRCA
-		cpu.rrc8Reg(REG_A)
+		cpu.rrca8Reg(REG_A)
 	},
 
 	0x10: func() {
@@ -111,7 +111,7 @@ var instructions = [0x100]func(){
 	},
 	0x17: func() {
 		// RLA
-		cpu.rl8Reg(REG_A)
+		cpu.rla8Reg(REG_A)
 	},
 	0x18: func() {
 		// JR r8
@@ -150,7 +150,7 @@ var instructions = [0x100]func(){
 	},
 	0x1f: func() {
 		// RRA
-		cpu.rr8Reg(REG_A)
+		cpu.rra8Reg(REG_A)
 	},
 
 	0x20: func() {
@@ -952,9 +952,9 @@ var instructions = [0x100]func(){
 			cpu.jump(addr)
 		}
 	},
-	0xcb: func() {
-		// PREFIX
-	},
+	// 0xcb: func() {
+	// 	// PREFIX
+	// },
 	0xcc: func() {
 		//  CALL Z, a16
 		lsb := memory.read(cpu.pc + 1)
