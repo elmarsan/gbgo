@@ -49,3 +49,17 @@ func clearBit(b uint8, pos uint8) uint8 {
 func readBit(b uint8, pos uint8) uint8 {
 	return b & (1 << pos)
 }
+
+// isBitSet returns boolean if bit = 1 otherwise 0
+func isBitSet(b uint8, pos uint8) bool {
+	return (b & (1 << pos)) != 0
+}
+
+// toggleBit set or clear bit at pos of b.
+func toggleBit(b uint8, pos uint8, on bool) uint8 {
+	if on {
+		return setBit(b, pos)
+	}
+
+	return clearBit(b, pos)
+}

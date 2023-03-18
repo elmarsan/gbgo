@@ -130,7 +130,6 @@ var prefixedInstructions = [0x100]func(){
 		// RR A
 		cpu.rr8Reg(REG_A)
 	},
-
 	0x20: func() {
 		// SLA B
 		cpu.sla8Reg(REG_B)

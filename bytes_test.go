@@ -46,4 +46,14 @@ func TestBytes(t *testing.T) {
 		x := clearBit(0b11001010, 1)
 		assert.Equal(uint8(readBit(x, 1)), uint8(0))
 	})
+
+	t.Run("isBitSet", func(t *testing.T) {
+		assert.True(isBitSet(0xf0, 7))
+		assert.False(isBitSet(0xf0, 0))
+	})
+
+	t.Run("toggleBit", func(t *testing.T) {
+		b := toggleBit(0xf0, 7, false)
+		assert.False(isBitSet(b, 7))
+	})
 }
