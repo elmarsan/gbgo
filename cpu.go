@@ -289,8 +289,7 @@ func (cpu *CPU) add16Reg(a CPU16Register, val uint16) {
 
 	cpu.setC(add > 0xffff)
 	cpu.setN(false)
-	cpu.setH((reg & 0xFFF) > (add & 0xFFF))
-	cpu.setZ(add == 1)
+	cpu.setH((reg & 0xfff) > (add & 0xfff))
 }
 
 // adc8Reg add register a, val and carry flag.

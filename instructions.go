@@ -277,7 +277,7 @@ var instructions = [0x100]func(){
 		memory.write(addr, dec)
 
 		cpu.setN(true)
-		cpu.setH((val & 0x00ff) == 0)
+		cpu.setH((val & 0xf) == 0)
 		cpu.setZ(dec == 0)
 	},
 	0x36: func() {
@@ -333,7 +333,7 @@ var instructions = [0x100]func(){
 		// CCF
 		cpu.setN(false)
 		cpu.setH(false)
-		// cpu.setC(cpu.C())
+		cpu.setC(!cpu.C())
 	},
 
 	0x40: func() {

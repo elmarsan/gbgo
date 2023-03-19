@@ -50,7 +50,7 @@ type Memory struct {
 	oam [40]uint8
 
 	// io represents hardware register
-	io [43]uint8
+	io [100]uint8
 
 	// ie represents interrupt enable register
 	ie uint8
@@ -128,7 +128,7 @@ func (m *Memory) write(addr uint16, val uint8) {
 		break
 
 	case addr <= IO_END:
-		m.hram[addr-IO_START] = val
+		m.io[addr-IO_START] = val
 		break
 
 	case addr <= HRAM_END:
