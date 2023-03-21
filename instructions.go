@@ -108,10 +108,10 @@ var instructions = [0x100]func(){
 	},
 	0x18: func() {
 		// JR r8
-		pc := cpu.readPc()
-		val := int8(memory.read(pc))
-		addr := int32(cpu.pc) + int32(val)
-		cpu.jump(uint16(addr))
+		val := int8(memory.read(cpu.readPc()))
+		pc := int32(cpu.pc)
+		addr := uint16(pc + int32(val))
+		cpu.jump(addr)
 	},
 	0x19: func() {
 		// ADD HL, DE
@@ -893,7 +893,9 @@ var instructions = [0x100]func(){
 	},
 	0xc2: func() {
 		// JP NZ, a16
-		addr := cpu.readPc()
+		lsb := memory.read(cpu.readPc())
+		msb := memory.read(cpu.readPc())
+		addr := joinu8(msb, lsb)
 
 		if !cpu.Z() {
 			cpu.jump(addr)
