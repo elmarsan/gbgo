@@ -50,7 +50,7 @@ type Memory struct {
 	oam [40]uint8
 
 	// io represents hardware register
-	io [100]uint8
+	io [127]uint8
 
 	// ie represents interrupt enable register
 	ie uint8
