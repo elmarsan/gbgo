@@ -10,8 +10,7 @@ var instructions = [0x100]func(){
 	},
 	0x02: func() {
 		// LD (BC), A
-		addr := cpu.read16Reg(REG_BC)
-		memory.write(addr, cpu.read8Reg(REG_A))
+		memory.write(cpu.read16Reg(REG_BC), cpu.read8Reg(REG_A))
 	},
 	0x03: func() {
 		// INC BC
@@ -296,7 +295,7 @@ var instructions = [0x100]func(){
 		// JR C, r8
 		pc := cpu.readPc()
 
-		if cpu.Z() {
+		if cpu.C() {
 			val := int8(memory.read(pc))
 			addr := int32(cpu.pc) + int32(val)
 			cpu.jump(uint16(addr))
@@ -906,7 +905,6 @@ var instructions = [0x100]func(){
 		lsb := memory.read(cpu.readPc())
 		msb := memory.read(cpu.readPc())
 		addr := joinu8(msb, lsb)
-
 		cpu.jump(addr)
 	},
 	0xc4: func() {

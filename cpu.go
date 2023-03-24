@@ -327,14 +327,17 @@ func (cpu *CPU) sub8Reg(a CPU8Register, val uint8) {
 // It stores in register a (a - val - carry) and sets flags.
 func (cpu *CPU) sbc8Reg(a CPU8Register, val uint8) {
 	reg := cpu.read8Reg(a)
-	carry := readBit(cpu.f, 4)
-	sub := reg - val - carry
-	cpu.set8Reg(a, sub)
+	var c uint8 = 1
+	if !cpu.C() {
+		c = 0
+	}
+	sub := int16(reg) - int16(val) - int16(c)
+	cpu.set8Reg(a, uint8(sub))
 
-	cpu.setC(sub > 0xff)
+	cpu.setC(sub < 0)
 	cpu.setN(true)
-	cpu.setH((sub & 0x0f) == 0)
-	cpu.setZ(sub == 0)
+	cpu.setH(int16(reg&0xf)-int16(val&0xf)-int16(c) < 0)
+	cpu.setZ(uint8(sub) == 0)
 }
 
 // and8Reg performs bitwise AND between register  and val.
@@ -388,36 +391,45 @@ func (cpu *CPU) cp8Reg(a CPU8Register, val uint8) {
 // rlca8Reg rotate A left
 // It rotates a register 1 bit to the left and set carry flag.
 func (cpu *CPU) rlca8Reg(a CPU8Register) {
-	val := cpu.read8Reg(a)
-	cpu.set8Reg(a, rotateLeft(val, 1))
-	// cpu.cFlag = readBit(val, 7) == 1
+	reg := cpu.read8Reg(a)
+	rotation := rotateLeft(reg, 1)
+	cpu.set8Reg(a, rotation)
+
+	cpu.setC(reg > 0x7f)
+	cpu.setN(false)
+	cpu.setH(false)
+	cpu.setZ(false)
 }
 
 // rla8Reg rotate A left through carry
 // It rotates a register 1 bit to the left and set carry flag.
 // The bit rotated is replaced by carry flag value.
 func (cpu *CPU) rla8Reg(a CPU8Register) {
-	val := cpu.read8Reg(a)
-	rotation := rotateLeft(val, 1)
-
-	rotation = toggleBit(rotation, 7, cpu.C())
-
-	if cpu.C() {
-		setBit(rotation, 7)
-	} else {
-		clearBit(rotation, 7)
+	reg := cpu.read8Reg(a)
+	var c uint8 = 1
+	if !cpu.C() {
+		c = 0
 	}
 
+	rotation := (reg << 1) + c
 	cpu.set8Reg(a, rotation)
-	cpu.setC(isBitSet(rotation, 7))
+	cpu.setC(reg > 0x7f)
+	cpu.setN(false)
+	cpu.setH(false)
+	cpu.setZ(false)
 }
 
 // rrca8Reg rotate A RIGHT
 // It rotates a register 1 bit to the right and set carry flag.
 func (cpu *CPU) rrca8Reg(a CPU8Register) {
 	val := cpu.read8Reg(a)
-	cpu.set8Reg(a, rotateRight(val, 1))
-	cpu.setC(readBit(val, 0) == 1)
+	rotation := rotateRight(val, 1)
+	cpu.set8Reg(a, rotation)
+
+	cpu.setC(rotation > 0x7f)
+	cpu.setN(false)
+	cpu.setH(false)
+	cpu.setZ(false)
 }
 
 // pushSp pushes a register on top of the stack pointer.
@@ -583,14 +595,13 @@ func (cpu *CPU) srlHL() {
 // It set flags depending on result.
 func (cpu *CPU) sra8Reg(a CPU8Register) {
 	reg := cpu.read8Reg(a)
-	carry := readBit(reg, 0)
-	shift := reg << 1
-	cpu.set8Reg(a, shift)
+	rotation := (reg & 128) | (reg >> 1)
+	cpu.set8Reg(a, rotation)
 
-	cpu.setC(carry == 1)
+	cpu.setC((reg & 1) == 1)
 	cpu.setH(false)
 	cpu.setN(false)
-	cpu.setZ(shift == 0)
+	cpu.setZ(rotation == 0)
 }
 
 // sraHL performs SRA instruction in register HL.
@@ -612,14 +623,14 @@ func (cpu *CPU) sraHL() {
 // It set flags depending on result.
 func (cpu *CPU) sla8Reg(a CPU8Register) {
 	reg := cpu.read8Reg(a)
-	carry := readBit(reg, 7)
-	shift := (reg << 1) & 0xff
-	cpu.set8Reg(a, shift)
+	carry := reg >> 7
+	rotation := (reg << 1) & 0xff
+	cpu.set8Reg(a, rotation)
 
 	cpu.setC(carry == 1)
 	cpu.setH(false)
 	cpu.setN(false)
-	cpu.setZ(shift == 0)
+	cpu.setZ(rotation == 0)
 }
 
 // slaHL performs SLA instruction in register HL.
@@ -706,12 +717,13 @@ func (cpu *CPU) rrHL() {
 func (cpu *CPU) rlc8Reg(a CPU8Register) {
 	reg := cpu.read8Reg(a)
 	carry := reg >> 7
-	shift := (reg<<1)&0xff | carry
+	rotation := (reg<<1)&0xff | carry
+	cpu.set8Reg(a, rotation)
 
 	cpu.setC(carry == 1)
 	cpu.setH(false)
 	cpu.setN(false)
-	cpu.setZ(shift == 0)
+	cpu.setZ(rotation == 0)
 }
 
 // rlcHL performs RLC instruction in register HL.
@@ -733,18 +745,14 @@ func (cpu *CPU) rlcHL() {
 // It set flags depending on result.
 func (cpu *CPU) rrc8Reg(a CPU8Register) {
 	reg := cpu.read8Reg(a)
-	var c uint8 = 1
-	if !cpu.C() {
-		c = 0
-	}
+	carry := reg & 1
+	rotation := (reg >> 1) | (carry << 7)
+	cpu.set8Reg(a, rotation)
 
-	shift := reg>>1 | (c << 7)
-	cpu.set8Reg(a, shift)
-
-	cpu.setC(isBitSet(reg, 1))
+	cpu.setC(carry == 1)
 	cpu.setH(false)
 	cpu.setN(false)
-	cpu.setZ(shift == 0)
+	cpu.setZ(rotation == 0)
 }
 
 // rrcHL performs RRC instruction in register HL.

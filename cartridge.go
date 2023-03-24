@@ -144,7 +144,9 @@ func (c *Cartridge) load(p string) error {
 	}
 
 	c.size = uint32(len(d))
-	c.data = d
+	data := make([]uint8, 0x8000)
+	copy(data, d)
+	c.data = data
 
 	c.header = &CartridgeHeader{}
 
@@ -169,8 +171,4 @@ func (c *Cartridge) load(p string) error {
 
 func (c *Cartridge) read(addr uint16) uint8 {
 	return c.data[addr]
-}
-
-func (c *Cartridge) write(addr uint16, val uint8) {
-	c.data[addr] = val
 }

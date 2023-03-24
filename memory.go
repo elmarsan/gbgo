@@ -7,11 +7,7 @@ import (
 
 // Memory map
 const (
-	CARTRIDGE_READ_START uint16 = 0x0000
-	CARTRIDGE_READ_END   uint16 = 0x3fff
-
-	CARTRIDGE_WRITE_START uint16 = 0x4000
-	CARTRIDGE_WRITE_END   uint16 = 0x7fff
+	CARTRIDGE_END uint16 = 0x7fff
 
 	VRAM_START uint16 = 0x8000
 	VRAM_END   uint16 = 0x9fff
@@ -58,9 +54,6 @@ type Memory struct {
 
 	// ie represents interrupt enable register
 	ie uint8
-
-	// rom represents writable rom bank
-	rom [0x1000]uint8
 }
 
 var memory = &Memory{}
@@ -72,11 +65,8 @@ func (m *Memory) read(addr uint16) uint8 {
 	case addr == LY:
 		return 0x90
 
-	case addr <= CARTRIDGE_READ_END:
-		return cartridge.read(addr - CARTRIDGE_READ_START)
-
-	case addr <= CARTRIDGE_WRITE_END:
-		return m.rom[addr-CARTRIDGE_WRITE_START]
+	case addr <= CARTRIDGE_END:
+		return cartridge.read(addr)
 
 	case addr <= VRAM_END:
 		return m.vram[addr-VRAM_START]
@@ -113,12 +103,9 @@ func (m *Memory) read(addr uint16) uint8 {
 // write writes value into memory address.
 func (m *Memory) write(addr uint16, val uint8) {
 	switch {
-	case addr <= CARTRIDGE_READ_END:
-		// can't write here
-		return
 
-	case addr <= CARTRIDGE_WRITE_END:
-		m.rom[addr-CARTRIDGE_WRITE_START] = val
+	case addr <= CARTRIDGE_END:
+		return
 
 	case addr <= VRAM_END:
 		m.vram[addr-VRAM_START] = val
