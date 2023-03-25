@@ -18,7 +18,7 @@ func main() {
 
 	rom := args[1]
 
-	err := cartridge.load(rom)
+	err := gameboy.LoadRom(rom)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -29,14 +29,10 @@ func main() {
 		log.Fatal(err)
 	}
 
-	go func() {
-		cpu.init()
-		cpu.running = true
+	gameboy.Init()
 
-		for cpu.running {
-			cpu.execute()
-			// time.Sleep(time.Second / 4)
-		}
+	go func() {
+		gameboy.Run()
 	}()
 
 	for {

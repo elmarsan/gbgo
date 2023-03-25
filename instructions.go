@@ -38,8 +38,8 @@ var instructions = [0x100]func(){
 		lsb := memory.read(cpu.readPc())
 		msb := memory.read(cpu.readPc())
 		addr := joinu8(msb, lsb)
-		memory.write(addr+1, lo(cpu.sp))
-		memory.write(addr, hi(cpu.sp))
+		memory.write(addr, lo(cpu.sp))
+		memory.write(addr+1, hi(cpu.sp))
 	},
 	0x09: func() {
 		// ADD HL, BC
@@ -563,6 +563,7 @@ var instructions = [0x100]func(){
 	},
 	0x76: func() {
 		// HALT
+		cpu.halted = true
 	},
 	0x77: func() {
 		// LD (HL), A
@@ -941,10 +942,11 @@ var instructions = [0x100]func(){
 	},
 	0xca: func() {
 		// JP Z, a16
-		addr := cpu.pc + 1
+		lsb := memory.read(cpu.readPc())
+		msb := memory.read(cpu.readPc())
 
 		if cpu.Z() {
-			cpu.jump(addr)
+			cpu.jump(joinu8(msb, lsb))
 		}
 	},
 	0xcc: func() {
@@ -985,10 +987,11 @@ var instructions = [0x100]func(){
 	},
 	0xd2: func() {
 		// JP NC, a16
-		addr := cpu.pc + 1
+		lsb := memory.read(cpu.readPc())
+		msb := memory.read(cpu.readPc())
 
 		if !cpu.C() {
-			cpu.jump(addr)
+			cpu.jump(joinu8(msb, lsb))
 		}
 	},
 	0xd4: func() {
@@ -997,8 +1000,7 @@ var instructions = [0x100]func(){
 		msb := memory.read(cpu.readPc())
 
 		if !cpu.C() {
-			addr := joinu8(msb, lsb)
-			cpu.call(addr)
+			cpu.call(joinu8(msb, lsb))
 		}
 	},
 	0xd5: func() {
@@ -1026,11 +1028,11 @@ var instructions = [0x100]func(){
 	},
 	0xda: func() {
 		// JP C, a16
-		addr := cpu.pc + 1
-		cpu.pc += 1
+		lsb := memory.read(cpu.readPc())
+		msb := memory.read(cpu.readPc())
 
 		if cpu.C() {
-			cpu.jump(addr)
+			cpu.jump(joinu8(msb, lsb))
 		}
 	},
 	0xdc: func() {
@@ -1148,7 +1150,7 @@ var instructions = [0x100]func(){
 	},
 	0xf9: func() {
 		// LD SP, HL
-		cpu.set16Reg(REG_SP, REG_HL)
+		cpu.set16Reg(REG_SP, cpu.read16Reg(REG_HL))
 	},
 	0xfa: func() {
 		// LD A, (a16)
@@ -1159,7 +1161,7 @@ var instructions = [0x100]func(){
 	},
 	0xfb: func() {
 		// IE
-		cpu.setIME(true)
+		cpu.setIme = true
 	},
 	0xfe: func() {
 		cpu.cp8Reg(REG_A, memory.read(cpu.readPc()))

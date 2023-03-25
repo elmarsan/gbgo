@@ -14,11 +14,12 @@ type CPU struct {
 	sp uint16
 	pc uint16
 
-	ime bool  // Interrup master enable flag
-	ie  uint8 // Interrup enable
-	iF  uint8 // Interrup flag
+	setIme bool
+	ime    bool  // Interrup master enable flag
+	ie     uint8 // Interrup enable
+	iF     uint8 // Interrup flag
 
-	running bool
+	halted bool
 }
 
 // CPU8Register represents 8 bit register.
