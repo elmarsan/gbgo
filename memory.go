@@ -131,6 +131,11 @@ func (m *Memory) write(addr uint16, val uint8) {
 		m.io[addr-IO_START] = val
 		break
 
+		// DMA transfer
+	case addr == 0xff46:
+		m.dmaTransfer(val)
+		break
+
 	case addr <= HRAM_END:
 		m.hram[addr-HRAM_START] = val
 		break
@@ -142,5 +147,15 @@ func (m *Memory) write(addr uint16, val uint8) {
 	default:
 		fmt.Printf("Invalid memory address 0%x", addr)
 		os.Exit(1)
+	}
+}
+
+// dmaTransfer performs dma transfer
+func (m *Memory) dmaTransfer(val uint8) {
+	addr := uint16(val) * 0x100
+
+	var i uint16
+	for i = 0; i < 0xa0; i++ {
+		m.write(OAM_START+i, m.read(addr+i))
 	}
 }

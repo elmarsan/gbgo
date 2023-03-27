@@ -45,7 +45,7 @@ func (g *Gameboy) handleInterrupts() {
 		return
 	}
 
-	interruptFlag := memory.read(IF)
+	interruptFlag := memory.read(0xff0f)
 
 	if interruptFlag > 0 && cpu.ime {
 		for i := 0; i < 5; i++ {
