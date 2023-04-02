@@ -667,8 +667,8 @@ var prefixedInstructions = [0x100]func(){
 		memory.write(hl, clearBit(val, 3))
 	},
 	0x9f: func() {
-		// RES 4, A
-		cpu.set8Reg(REG_A, clearBit(cpu.read8Reg(REG_A), 4))
+		// RES 3, A
+		cpu.set8Reg(REG_A, clearBit(cpu.read8Reg(REG_A), 3))
 	},
 
 	0xa0: func() {
@@ -722,8 +722,8 @@ var prefixedInstructions = [0x100]func(){
 		cpu.set8Reg(REG_E, clearBit(cpu.read8Reg(REG_E), 5))
 	},
 	0xac: func() {
-		// RES 5, D
-		cpu.set8Reg(REG_D, clearBit(cpu.read8Reg(REG_D), 5))
+		// RES 5, H
+		cpu.set8Reg(REG_H, clearBit(cpu.read8Reg(REG_H), 5))
 	},
 	0xad: func() {
 		// RES 5, L

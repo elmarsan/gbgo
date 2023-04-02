@@ -243,29 +243,17 @@ func (cpu *CPU) dec8Reg(a CPU8Register) {
 }
 
 // inc16reg increments 16 bit register.
-// It stores in a register a (a + 1) and sets flags.
-func (cpu *CPU) inc16reg(reg CPU16Register, setFlags bool) {
+// It stores in a register a (a + 1).
+func (cpu *CPU) inc16reg(reg CPU16Register) {
 	val := cpu.read16Reg(reg)
-	inc := val + 1
-	cpu.set16Reg(reg, inc)
-
-	if setFlags {
-		cpu.setN(false)
-		cpu.setH((val&0x00ff)+1 > 0xff)
-		cpu.setZ(inc == 0)
-	}
+	cpu.set16Reg(reg, val+1)
 }
 
 // dec16Reg decrements 16 bit register.
 // It stores in a register a (a - 1) and sets flags.
 func (cpu *CPU) dec16Reg(a CPU16Register) {
 	reg := cpu.read16Reg(a)
-	dec := reg - 1
-	cpu.set16Reg(a, dec)
-
-	cpu.setN(true)
-	cpu.setH((reg & 0x00ff) == 0)
-	cpu.setZ(dec == 0)
+	cpu.set16Reg(a, reg-1)
 }
 
 // add8Reg adds val to register a.
@@ -285,12 +273,12 @@ func (cpu *CPU) add8Reg(a CPU8Register, val uint8) {
 // It stores in a register a (a + val) and sets flags.
 func (cpu *CPU) add16Reg(a CPU16Register, val uint16) {
 	reg := cpu.read16Reg(a)
-	add := reg + val
-	cpu.set16Reg(a, add)
+	add := int32(reg) + int32(val)
+	cpu.set16Reg(a, uint16(add))
 
 	cpu.setC(add > 0xffff)
 	cpu.setN(false)
-	cpu.setH((reg & 0xfff) > (add & 0xfff))
+	cpu.setH(int32(reg&0xfff) > (add & 0xfff))
 }
 
 // adc8Reg add register a, val and carry flag.
@@ -518,9 +506,9 @@ func (cpu *CPU) setZ(on bool) {
 // It set flags depending on result.
 func (cpu *CPU) bit8Reg(a CPU8Register, bit uint8) {
 	val := readBit(cpu.read8Reg(a), bit)
-	cpu.set8Reg(a, val)
 
 	cpu.setH(true)
+	cpu.setN(false)
 	cpu.setZ(val == 0)
 }
 

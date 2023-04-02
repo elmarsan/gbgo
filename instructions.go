@@ -14,7 +14,7 @@ var instructions = [0x100]func(){
 	},
 	0x03: func() {
 		// INC BC
-		cpu.inc16reg(REG_BC, false)
+		cpu.inc16reg(REG_BC)
 	},
 	0x04: func() {
 		// INC B
@@ -87,7 +87,7 @@ var instructions = [0x100]func(){
 	},
 	0x13: func() {
 		// INC DE
-		cpu.inc16reg(REG_DE, false)
+		cpu.inc16reg(REG_DE)
 	},
 	0x14: func() {
 		// INC D
@@ -175,7 +175,7 @@ var instructions = [0x100]func(){
 	},
 	0x23: func() {
 		// INC HL
-		cpu.inc16reg(REG_HL, false)
+		cpu.inc16reg(REG_HL)
 	},
 	0x24: func() {
 		// INC H
@@ -191,6 +191,31 @@ var instructions = [0x100]func(){
 	},
 	0x27: func() {
 		// DAA
+		a := cpu.read8Reg(REG_A)
+
+		if !cpu.N() {
+			if cpu.C() || a > 0x99 {
+				a += 0x60
+				cpu.setC(true)
+			}
+
+			if cpu.H() || (a&0x0f) > 0x09 {
+				a += 0x6
+			}
+		} else {
+			if cpu.C() {
+				a -= 0x60
+			}
+
+			if cpu.H() {
+				a -= 0x6
+			}
+		}
+
+		cpu.setZ(a == 0)
+		cpu.setH(false)
+
+		cpu.set8Reg(REG_A, a)
 	},
 	0x28: func() {
 		// JR Z, r8
@@ -266,7 +291,7 @@ var instructions = [0x100]func(){
 	},
 	0x34: func() {
 		// INC (HL)
-		cpu.inc16reg(REG_HL, true)
+		cpu.inc16reg(REG_HL)
 	},
 	0x35: func() {
 		// DEC (HL)
@@ -1086,7 +1111,16 @@ var instructions = [0x100]func(){
 	},
 	0xe8: func() {
 		// ADD SP, r8
-		cpu.add16Reg(REG_SP, cpu.readPc())
+		sp := cpu.read16Reg(REG_SP)
+		r8 := int8(memory.read(cpu.readPc()))
+		add := sp + uint16(r8)
+		cpu.set16Reg(REG_SP, add)
+
+		carry := sp ^ uint16(r8) ^ add
+		cpu.setZ(false)
+		cpu.setN(false)
+		cpu.setH(carry&0x10 == 0x10)
+		cpu.setC(carry&0x100 == 0x100)
 	},
 	0xe9: func() {
 		// JP HL
@@ -1118,6 +1152,7 @@ var instructions = [0x100]func(){
 	0xf1: func() {
 		// POP AF
 		cpu.popSp(REG_AF)
+		cpu.set16Reg(REG_AF, cpu.read16Reg(REG_AF)&0xfff0)
 	},
 	0xf2: func() {
 		// LD A, (C)
@@ -1145,8 +1180,14 @@ var instructions = [0x100]func(){
 	0xf8: func() {
 		//  LD HL, SP + r8
 		r8 := int8(memory.read(cpu.readPc()))
-		val := int32(cpu.sp) + int32(r8)
-		cpu.set16Reg(REG_HL, uint16(val))
+		add := int32(cpu.sp) + int32(r8)
+		cpu.set16Reg(REG_HL, uint16(add))
+
+		carry := cpu.sp ^ uint16(r8) ^ uint16(add)
+		cpu.setZ(false)
+		cpu.setN(false)
+		cpu.setH(carry&0x10 == 0x10)
+		cpu.setC(carry&0x100 == 0x100)
 	},
 	0xf9: func() {
 		// LD SP, HL
