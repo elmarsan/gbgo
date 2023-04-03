@@ -291,7 +291,14 @@ var instructions = [0x100]func(){
 	},
 	0x34: func() {
 		// INC (HL)
-		cpu.inc16reg(REG_HL)
+		addr := cpu.read16Reg(REG_HL)
+		val := memory.read(addr)
+		inc := val + 1
+		memory.write(addr, inc)
+
+		cpu.setN(false)
+		cpu.setH((val&0xf)+1 > 0xf)
+		cpu.setZ(inc == 0)
 	},
 	0x35: func() {
 		// DEC (HL)
@@ -1091,7 +1098,7 @@ var instructions = [0x100]func(){
 	},
 	0xe2: func() {
 		// LD (C), A
-		addr := joinu8(cpu.read8Reg(REG_C), 0xff)
+		addr := joinu8(0xff, cpu.read8Reg(REG_C))
 		val := cpu.read8Reg(REG_A)
 		memory.write(addr, val)
 	},
