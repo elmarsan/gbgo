@@ -14,10 +14,8 @@ type CPU struct {
 	sp uint16
 	pc uint16
 
-	setIme bool
-	ime    bool  // Interrup master enable flag
-	ie     uint8 // Interrup enable
-	iF     uint8 // Interrup flag
+	enableISR    bool
+	interruptsOn bool
 
 	halted bool
 }
@@ -76,7 +74,7 @@ func (cpu *CPU) init() {
 
 // execute executes next instruction.
 func (cpu *CPU) execute() {
-	logState()
+	debug.logState()
 	pc := cpu.readPc()
 	opcode := memory.read(pc)
 
@@ -438,11 +436,6 @@ func (cpu *CPU) popSp(a CPU16Register) {
 
 	cpu.set16Reg(a, val)
 	cpu.sp += 2
-}
-
-// setIME sets IME flag.
-func (cpu *CPU) setIME(enabled bool) {
-	cpu.ime = enabled
 }
 
 // jump jumps to the next instruction located in addr.

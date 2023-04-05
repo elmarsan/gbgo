@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	initLogger()
+	debug.init()
 
 	args := os.Args
 
@@ -17,7 +17,6 @@ func main() {
 	}
 
 	rom := args[1]
-
 	err := gameboy.LoadRom(rom)
 	if err != nil {
 		fmt.Println(err)

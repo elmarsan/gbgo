@@ -1056,7 +1056,7 @@ var instructions = [0x100]func(){
 	0xd9: func() {
 		// RETI
 		cpu.ret()
-		cpu.setIME(true)
+		cpu.enableISR = true
 	},
 	0xda: func() {
 		// JP C, a16
@@ -1170,7 +1170,7 @@ var instructions = [0x100]func(){
 	},
 	0xf3: func() {
 		// DI
-		cpu.setIME(false)
+		cpu.enableISR = false
 	},
 	0xf5: func() {
 		// PUSH AF
@@ -1209,7 +1209,7 @@ var instructions = [0x100]func(){
 	},
 	0xfb: func() {
 		// IE
-		cpu.setIme = true
+		cpu.enableISR = true
 	},
 	0xfe: func() {
 		cpu.cp8Reg(REG_A, memory.read(cpu.readPc()))
