@@ -14,10 +14,11 @@ type CPU struct {
 	sp uint16
 	pc uint16
 
-	enableISR    bool
-	interruptsOn bool
+	halted      bool
+	ime         bool
+	enablingIme bool
 
-	halted bool
+	ticks uint8
 }
 
 // CPU8Register represents 8 bit register.
@@ -57,8 +58,6 @@ const (
 	Z                // bit 7
 )
 
-var cpu = &CPU{}
-
 func (cpu *CPU) init() {
 	cpu.a = 0x01
 	cpu.f = 0xb0
@@ -82,8 +81,10 @@ func (cpu *CPU) execute() {
 		pc := cpu.readPc()
 		opcode := memory.read(pc)
 		prefixedInstructions[opcode]()
+		cpu.ticks += cbInstructionCycles[opcode] * 4
 	} else {
 		instructions[opcode]()
+		cpu.ticks += instructionCycles[opcode] * 4
 	}
 }
 

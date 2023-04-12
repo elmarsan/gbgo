@@ -30,8 +30,6 @@ type Cartridge struct {
 	header *CartridgeHeader
 }
 
-var cartridge = &Cartridge{}
-
 var licenseCodes = [0xa5]string{
 	0x00: "None",
 	0x01: "Nintendo R&D1",

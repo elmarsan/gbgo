@@ -50,13 +50,11 @@ type Memory struct {
 	oam [0x100]uint8
 
 	// io represents hardware register
-	io [127]uint8
+	io [0x80]uint8
 
 	// ie represents interrupt enable register
 	ie uint8
 }
-
-var memory = &Memory{}
 
 // read reads from memory address.
 func (m *Memory) read(addr uint16) uint8 {
@@ -84,6 +82,9 @@ func (m *Memory) read(addr uint16) uint8 {
 	case addr <= OAM_END:
 		return m.oam[addr-OAM_START]
 
+	case addr <= 0xfeff:
+		return 0
+
 	case addr <= IO_END:
 		return m.io[addr-IO_START]
 
@@ -103,7 +104,6 @@ func (m *Memory) read(addr uint16) uint8 {
 // write writes value into memory address.
 func (m *Memory) write(addr uint16, val uint8) {
 	switch {
-
 	case addr <= CARTRIDGE_END:
 		return
 
@@ -127,6 +127,9 @@ func (m *Memory) write(addr uint16, val uint8) {
 		m.oam[addr-OAM_START] = val
 		break
 
+	case addr <= 0xfeff:
+		break
+
 	case addr <= IO_END:
 		m.io[addr-IO_START] = val
 		break
@@ -138,6 +141,10 @@ func (m *Memory) write(addr uint16, val uint8) {
 
 	case addr <= HRAM_END:
 		m.hram[addr-HRAM_START] = val
+		break
+
+	case addr == DIV:
+		m.io[addr-IO_START] = 0
 		break
 
 	case addr == IE_REG:

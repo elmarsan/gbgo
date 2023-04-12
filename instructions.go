@@ -1,5 +1,24 @@
 package main
 
+var instructionCycles = []uint8{
+	1, 3, 2, 2, 1, 1, 2, 1, 5, 2, 2, 2, 1, 1, 2, 1,
+	0, 3, 2, 2, 1, 1, 2, 1, 3, 2, 2, 2, 1, 1, 2, 1,
+	2, 3, 2, 2, 1, 1, 2, 1, 2, 2, 2, 2, 1, 1, 2, 1,
+	2, 3, 2, 2, 3, 3, 3, 1, 2, 2, 2, 2, 1, 1, 2, 1,
+	1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,
+	1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,
+	1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,
+	2, 2, 2, 2, 2, 2, 0, 2, 1, 1, 1, 1, 1, 1, 2, 1,
+	1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,
+	1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,
+	1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,
+	1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,
+	2, 3, 3, 4, 3, 4, 2, 4, 2, 4, 3, 0, 3, 6, 2, 4,
+	2, 3, 3, 0, 3, 4, 2, 4, 2, 4, 3, 0, 3, 0, 2, 4,
+	3, 3, 2, 0, 0, 4, 2, 4, 4, 1, 4, 0, 0, 0, 2, 4,
+	3, 3, 2, 1, 0, 4, 2, 4, 3, 2, 4, 1, 0, 0, 2, 4,
+}
+
 var instructions = [0x100]func(){
 	0x00: func() {}, // NOP
 	0x01: func() {
@@ -74,6 +93,7 @@ var instructions = [0x100]func(){
 
 	0x10: func() {
 		// STOP d8
+		timer.resetDiv()
 	},
 	0x11: func() {
 		// LD DE, d16
@@ -159,6 +179,7 @@ var instructions = [0x100]func(){
 		if !cpu.Z() {
 			addr := int32(cpu.pc) + int32(val)
 			cpu.jump(uint16(addr))
+			cpu.ticks += 4
 		}
 	},
 	0x21: func() {
@@ -225,6 +246,7 @@ var instructions = [0x100]func(){
 		if cpu.Z() {
 			addr := int32(cpu.pc) + int32(val)
 			cpu.jump(uint16(addr))
+			cpu.ticks += 4
 		}
 	},
 	0x29: func() {
@@ -271,6 +293,7 @@ var instructions = [0x100]func(){
 			val := int8(memory.read(pc))
 			addr := int32(cpu.pc) + int32(val)
 			cpu.jump(uint16(addr))
+			cpu.ticks += 4
 		}
 	},
 	0x31: func() {
@@ -331,6 +354,7 @@ var instructions = [0x100]func(){
 			val := int8(memory.read(pc))
 			addr := int32(cpu.pc) + int32(val)
 			cpu.jump(uint16(addr))
+			cpu.ticks += 4
 		}
 	},
 	0x39: func() {
@@ -917,6 +941,7 @@ var instructions = [0x100]func(){
 		// RET NZ
 		if !cpu.Z() {
 			cpu.ret()
+			cpu.ticks += 12
 		}
 	},
 	0xc1: func() {
@@ -931,6 +956,7 @@ var instructions = [0x100]func(){
 
 		if !cpu.Z() {
 			cpu.jump(addr)
+			cpu.ticks += 4
 		}
 	},
 	0xc3: func() {
@@ -948,6 +974,7 @@ var instructions = [0x100]func(){
 		if !cpu.Z() {
 			addr := joinu8(msb, lsb)
 			cpu.call(addr)
+			cpu.ticks += 12
 		}
 	},
 	0xc5: func() {
@@ -966,6 +993,7 @@ var instructions = [0x100]func(){
 		// RET Z
 		if cpu.Z() {
 			cpu.ret()
+			cpu.ticks += 12
 		}
 	},
 	0xc9: func() {
@@ -979,6 +1007,7 @@ var instructions = [0x100]func(){
 
 		if cpu.Z() {
 			cpu.jump(joinu8(msb, lsb))
+			cpu.ticks += 4
 		}
 	},
 	0xcc: func() {
@@ -989,6 +1018,7 @@ var instructions = [0x100]func(){
 		if cpu.Z() {
 			addr := joinu8(msb, lsb)
 			cpu.call(addr)
+			cpu.ticks += 12
 		}
 	},
 	0xcd: func() {
@@ -1011,6 +1041,7 @@ var instructions = [0x100]func(){
 		// RET NC
 		if !cpu.C() {
 			cpu.ret()
+			cpu.ticks += 12
 		}
 	},
 	0xd1: func() {
@@ -1024,6 +1055,7 @@ var instructions = [0x100]func(){
 
 		if !cpu.C() {
 			cpu.jump(joinu8(msb, lsb))
+			cpu.ticks += 4
 		}
 	},
 	0xd4: func() {
@@ -1033,6 +1065,7 @@ var instructions = [0x100]func(){
 
 		if !cpu.C() {
 			cpu.call(joinu8(msb, lsb))
+			cpu.ticks += 12
 		}
 	},
 	0xd5: func() {
@@ -1051,12 +1084,13 @@ var instructions = [0x100]func(){
 		// RET C
 		if cpu.C() {
 			cpu.ret()
+			cpu.ticks += 12
 		}
 	},
 	0xd9: func() {
 		// RETI
+		cpu.enablingIme = true
 		cpu.ret()
-		cpu.enableISR = true
 	},
 	0xda: func() {
 		// JP C, a16
@@ -1065,6 +1099,7 @@ var instructions = [0x100]func(){
 
 		if cpu.C() {
 			cpu.jump(joinu8(msb, lsb))
+			cpu.ticks += 4
 		}
 	},
 	0xdc: func() {
@@ -1075,6 +1110,7 @@ var instructions = [0x100]func(){
 		if cpu.C() {
 			addr := joinu8(msb, lsb)
 			cpu.call(addr)
+			cpu.ticks += 12
 		}
 	},
 	0xde: func() {
@@ -1170,7 +1206,7 @@ var instructions = [0x100]func(){
 	},
 	0xf3: func() {
 		// DI
-		cpu.enableISR = false
+		cpu.enablingIme = false
 	},
 	0xf5: func() {
 		// PUSH AF
@@ -1209,7 +1245,7 @@ var instructions = [0x100]func(){
 	},
 	0xfb: func() {
 		// IE
-		cpu.enableISR = true
+		cpu.enablingIme = true
 	},
 	0xfe: func() {
 		cpu.cp8Reg(REG_A, memory.read(cpu.readPc()))

@@ -11,8 +11,6 @@ package main
 
 type LCD struct{}
 
-var lcd = &LCD{}
-
 // isEnabled returns bool indicating if lcd and ppu are enabled.
 // bit 7 (0=Off, 1=On)
 func (lcd *LCD) isEnabled() bool {

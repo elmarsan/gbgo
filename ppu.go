@@ -5,8 +5,6 @@ type PPU struct {
 	pixels [160][144]uint32
 }
 
-var ppu = &PPU{}
-
 const (
 	LCDC = 0xff40 // LCD control
 	STAT = 0xff41 // LCD status

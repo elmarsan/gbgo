@@ -6,6 +6,16 @@ import (
 	"os"
 )
 
+var (
+	gameboy   = &Gameboy{}
+	memory    = &Memory{}
+	cpu       = &CPU{}
+	ppu       = &PPU{}
+	cartridge = &Cartridge{}
+	lcd       = &LCD{}
+	timer     = &Timer{}
+)
+
 func main() {
 	debug.init()
 
@@ -19,16 +29,13 @@ func main() {
 	rom := args[1]
 	err := gameboy.LoadRom(rom)
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		log.Fatal(err)
 	}
 
 	err = initScreen()
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	gameboy.Init()
 
 	go func() {
 		gameboy.Run()

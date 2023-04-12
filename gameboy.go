@@ -1,30 +1,27 @@
 package main
 
-type Gameboy struct {
-	running bool
-}
-
-var gameboy = &Gameboy{}
-
-func (g *Gameboy) Init() {
-	gameboy.running = false
-}
+type Gameboy struct{}
 
 func (g *Gameboy) Run() {
-	g.running = true
-
-	cpu.init()
-	cpu.halted = false
-
-	for g.running {
+	for {
 		if !cpu.halted {
 			cpu.execute()
+		} else {
+			if g.interruptPending() {
+				cpu.halted = false
+			}
 		}
 
-		if cpu.enableISR {
-			g.handleInterrupts()
+		if cpu.ime {
+			if g.interruptPending() {
+				g.executeISR()
+			}
 		}
 
+		if cpu.enablingIme {
+			cpu.ime = true
+			cpu.enablingIme = false
+		}
 	}
 }
 
@@ -38,49 +35,61 @@ func (g *Gameboy) LoadRom(rom string) error {
 	return nil
 }
 
-func (g *Gameboy) handleInterrupts() {
-	if cpu.enableISR {
-		cpu.enableISR = false
-		cpu.interruptsOn = true
-		return
+func (g *Gameboy) interruptPending() bool {
+	ifFlag := memory.read(0xff0f)
+	ieFlag := memory.read(0xffff)
+
+	if ifFlag&ieFlag&0x1f > 0 {
+		return true
 	}
 
-	if !cpu.interruptsOn && !cpu.halted {
-		return
-	}
+	return false
+}
 
-	interruptFlag := memory.read(0xff0f)
-	interruptEnable := memory.read(0xffff)
+func (g *Gameboy) executeISR() {
+	cpu.enablingIme = false
+	cpu.ime = false
 
-	// Clear IF and IE
-	memory.write(0xff0f, 0)
-	memory.write(0xffff, 0)
+	ifFlag := memory.read(0xff0f)
 
-	// Bit 0: VBlank   Interrupt Request (INT $40)  (1=Request)
-	// Bit 1: LCD STAT Interrupt Request (INT $48)  (1=Request)
-	// Bit 2: Timer    Interrupt Request (INT $50)  (1=Request)
-	// Bit 3: Serial   Interrupt Request (INT $58)  (1=Request)
-	// Bit 4: Joypad   Interrupt Request (INT $60)  (1=Request)
-	if interruptFlag > 0 {
-		switch {
-		case isBitSet(interruptFlag, 0) && isBitSet(interruptEnable, 0):
-			cpu.call(0x40)
-			break
-		case isBitSet(interruptFlag, 1) && isBitSet(interruptEnable, 1):
-			cpu.call(0x48)
-			break
-		case isBitSet(interruptFlag, 2) && isBitSet(interruptEnable, 2):
-			cpu.call(0x50)
-			break
-		case isBitSet(interruptFlag, 3) && isBitSet(interruptEnable, 3):
-			cpu.call(0x58)
-			break
-		case isBitSet(interruptFlag, 4) && isBitSet(interruptEnable, 4):
-			cpu.call(0x60)
-			break
+	var i uint8 = 0
+	for ; i < 5; i++ {
+		if isBitSet(ifFlag, i) {
+			isrHandler[i]()
+			return
 		}
 	}
+}
 
-	cpu.enableISR = false
-	cpu.interruptsOn = false
+// Bit 0: VBlank Interrupt Request (INT $40)
+// Bit 1: LCD STAT Interrupt Enable (INT $48)
+// Bit 2: Timer Interrupt Request (INT $50)
+// Bit 3: Serial Interrupt Request (INT $58)
+// Bit 4: Joypad Interrupt Request (INT $60)
+var isrHandler = map[uint8]func(){
+	0: func() {
+		ifFlag := memory.read(0xff0f)
+		memory.write(0xff0f, clearBit(ifFlag, 0))
+		cpu.call(uint16(memory.read(0x40)))
+	},
+	1: func() {
+		ifFlag := memory.read(0xff0f)
+		memory.write(0xff0f, clearBit(ifFlag, 1))
+		cpu.call(uint16(memory.read(0x48)))
+	},
+	2: func() {
+		ifFlag := memory.read(0xff0f)
+		memory.write(0xff0f, clearBit(ifFlag, 2))
+		cpu.call(uint16(memory.read(0x50)))
+	},
+	3: func() {
+		ifFlag := memory.read(0xff0f)
+		memory.write(0xff0f, clearBit(ifFlag, 3))
+		cpu.call(uint16(memory.read(0x58)))
+	},
+	4: func() {
+		ifFlag := memory.read(0xff0f)
+		memory.write(0xff0f, clearBit(ifFlag, 4))
+		cpu.call(uint16(memory.read(0x60)))
+	},
 }
