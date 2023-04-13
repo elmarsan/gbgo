@@ -37,6 +37,8 @@ func main() {
 		log.Fatal(err)
 	}
 
+	memory.init()
+
 	go func() {
 		gameboy.Run()
 	}()

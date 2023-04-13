@@ -1,6 +1,6 @@
 package main
 
-var instructionCycles = []uint8{
+var instructionCycles = []int{
 	1, 3, 2, 2, 1, 1, 2, 1, 5, 2, 2, 2, 1, 1, 2, 1,
 	0, 3, 2, 2, 1, 1, 2, 1, 3, 2, 2, 2, 1, 1, 2, 1,
 	2, 3, 2, 2, 1, 1, 2, 1, 2, 2, 2, 2, 1, 1, 2, 1,
@@ -93,7 +93,7 @@ var instructions = [0x100]func(){
 
 	0x10: func() {
 		// STOP d8
-		timer.resetDiv()
+		timer.resetDIV()
 	},
 	0x11: func() {
 		// LD DE, d16

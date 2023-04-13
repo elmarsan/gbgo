@@ -18,7 +18,7 @@ type CPU struct {
 	ime         bool
 	enablingIme bool
 
-	ticks uint8
+	ticks int
 }
 
 // CPU8Register represents 8 bit register.
@@ -74,6 +74,8 @@ func (cpu *CPU) init() {
 // execute executes next instruction.
 func (cpu *CPU) execute() {
 	debug.logState()
+
+	cpu.ticks = 0
 	pc := cpu.readPc()
 	opcode := memory.read(pc)
 

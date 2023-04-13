@@ -56,6 +56,18 @@ type Memory struct {
 	ie uint8
 }
 
+func (m *Memory) init() {
+	// Timer
+	m.io[TIMA-IO_START] = 0xab
+	m.write(TIMA, 0x00)
+	m.write(TMA, 0x00)
+	m.write(TAC, 0xf8)
+
+	// Interrupt
+	m.write(IF, 0xe1)
+	m.write(IE, 0x00)
+}
+
 // read reads from memory address.
 func (m *Memory) read(addr uint16) uint8 {
 	switch {
@@ -130,6 +142,10 @@ func (m *Memory) write(addr uint16, val uint8) {
 	case addr <= 0xfeff:
 		break
 
+	case addr == DIV:
+		m.io[addr-IO_START] = 0
+		break
+
 	case addr <= IO_END:
 		m.io[addr-IO_START] = val
 		break
@@ -141,10 +157,6 @@ func (m *Memory) write(addr uint16, val uint8) {
 
 	case addr <= HRAM_END:
 		m.hram[addr-HRAM_START] = val
-		break
-
-	case addr == DIV:
-		m.io[addr-IO_START] = 0
 		break
 
 	case addr == IE_REG:
