@@ -2,7 +2,7 @@ package main
 
 // PPU represents game boy pixel processing unit.
 type PPU struct {
-	pixels [160][144]uint32
+	ticks int
 }
 
 const (
@@ -14,103 +14,113 @@ const (
 	WX   = 0xff4b // Window X position
 	LY   = 0xff44 // LCD Y coordinate
 	LYC  = 0xff45 // LY compare
+
+	LINE_TICKS  = 456
+	FRAME_LINES = 154
+
+	STAT_MODE_HBLANK   = iota // MODE 0 HBLANK
+	STAT_MODE_VBLANK          // MODE 1 VBLANK
+	STAT_MODE_OAM_SCAN        // MODE 2 OAM SCAN
+	STAT_MODE_DRAW            // MODE 3 DRAWING PIXELS
+
+	STAT_MODE_OAM_TICKS  = LINE_TICKS - 80
+	STAT_MODE_DRAW_TICKS = STAT_MODE_OAM_TICKS - 172
 )
 
-var palette [4]uint32 = [4]uint32{0xffffffff, 0xffaaaaaa, 0xff555555, 0xff000000}
-
-// update updates pixels of the lcd screen.
-func (ppu *PPU) update() {
-	if !ppu.isLdcEnabled() {
+func (ppu *PPU) updatePixels() {
+	if !ppu.isLCDEnabled() {
+		ppu.clearLCD()
 		return
 	}
 
-	ppu.renderTiles()
-	// ppu.renderSprites()
-}
+	status := memory.read(STAT)
+	mode := status & 0x3
+	ly := memory.read(LY)
 
-// renderTiles render tiles in lcd screen.
-func (ppu *PPU) renderTiles() {
-	addressingMode := readBit(memory.read(LCDC), 7)
+	switch {
+	// STAT MODE VBLANK
+	case ly >= 144:
+		status = setBit(status, 0)
+		status = clearBit(status, 1)
 
-	// addressing mode 0 (0x8000 - 0x87ff)
-	var startAddr uint16 = 0x8000
-	// endAddr := 0x87ff
-
-	// addresing mode 1 (0x8800 - 0x8fff)
-	if addressingMode == 1 {
-		startAddr = 0x8800
-		// endAddr = 0x8fff
-	}
-
-	tileIndex := 0
-
-	yPos, xPos := 0, 0
-
-	for i := 0; i < 8; i++ {
-		for x := 0; x < 16; x++ {
-			for tileY := uint16(0); tileY < 16; tileY += 2 {
-				b1Addr := startAddr + (uint16(tileIndex) * 16) + tileY
-				b2Addr := startAddr + (uint16(tileIndex) * 16) + tileY + 1
-
-				b1 := memory.read(b1Addr)
-				b2 := memory.read(b2Addr)
-
-				for bit := uint8(7); bit >= 0; bit-- {
-					// color := readBit(b1, bit) | readBit(b2, bit)
-					hi := uint8((b1&(1<<bit))>>bit) << 1
-					lo := uint8((b2 & (1 << bit)) >> bit)
-					color := hi | lo
-
-					ppu.pixels[yPos][xPos] = palette[color]
-				}
-			}
+		if isBitSet(status, 4) {
+			gameboy.reqInterrupt(IT_LCD_STAT)
 		}
 
-		yPos += 8
-		xPos = 0
+	// STAT MODE OAM
+	case ppu.ticks >= STAT_MODE_OAM_TICKS:
+		status = clearBit(status, 0)
+		status = setBit(status, 1)
+
+		if isBitSet(status, 5) {
+			gameboy.reqInterrupt(IT_LCD_STAT)
+		}
+
+	// STAT MODE DRAW
+	case ppu.ticks >= STAT_MODE_DRAW_TICKS:
+		status = setBit(status, 0)
+		status = setBit(status, 1)
+
+		if mode != STAT_MODE_DRAW {
+			ppu.render()
+		}
+
+	// STAT MODE HBLANK
+	default:
+		status = clearBit(status, 0)
+		status = clearBit(status, 1)
+
+		if isBitSet(status, 3) {
+			gameboy.reqInterrupt(IT_LCD_STAT)
+		}
+	}
+
+	memory.write(STAT, status)
+	ppu.compareLY()
+}
+
+func (ppu *PPU) render() {
+	lcd := memory.read(LCDC)
+
+	if isBitSet(lcd, 0) {
+		ppu.renderTiles()
+	}
+
+	if isBitSet(lcd, 1) {
+		ppu.renderSprites()
 	}
 }
 
-func (ppu *PPU) renderSprites() {
+func (ppu *PPU) renderTiles() {}
 
-}
+func (ppu *PPU) renderSprites() {}
 
-// isLcdcEnabled returns bool flag indicating if LCDC bit 7 is set.
-// 7 LCD and PPU enable	0=Off, 1=On
-func (ppu *PPU) isLdcEnabled() bool {
+func (ppu *PPU) isLCDEnabled() bool {
 	return isBitSet(memory.read(LCDC), 7)
 }
 
-// bgWindowPriority returns bool flag indicating if LCDC bit 0 is set.
-// BG and Window enable/priority 0=Off, 1=On
-func (ppu *PPU) bgWindowPriority() bool {
-	return isBitSet(memory.read(LCDC), 0)
+func (ppu *PPU) clearLCD() {
+	ppu.ticks = LINE_TICKS
+	memory.write(LY, 0)
+	memory.write(LYC, 0)
+	status := memory.read(STAT)
+	status = clearBit(status, 0)
+	status = clearBit(status, 1)
+	memory.write(STAT, status)
 }
 
-// Sprite represents drawable object.
-type Sprite struct {
-	x         uint8
-	y         uint8
-	tileIndex uint8
-	flags     uint8
-}
+func (ppu *PPU) compareLY() {
+	ly := memory.read(LY)
+	lyc := memory.read(LYC)
+	status := memory.read(STAT)
 
-// Palette number **Non CGB Mode Only** (0=OBP0, 1=OBP1)
-func (s *Sprite) palette() bool {
-	return readBit(s.flags, 4) == 1
-}
+	if ly == lyc {
+		memory.write(STAT, setBit(status, 2))
 
-// X flip (0=Normal, 1=Horizontally mirrored)
-func (s *Sprite) flipX() bool {
-	return readBit(s.flags, 5) == 1
-}
-
-// Y flip (0=Normal, 1=Vertically mirrored)
-func (s *Sprite) flipY() bool {
-	return readBit(s.flags, 6) == 1
-}
-
-// BG and Window over OBJ (0=No, 1=BG and Window colors 1-3 over the OBJ)
-func (s *Sprite) bg() bool {
-	return readBit(s.flags, 7) == 1
+		if isBitSet(memory.read(STAT), 6) {
+			gameboy.reqInterrupt(IT_LCD_STAT)
+		}
+	} else {
+		memory.write(STAT, clearBit(status, 2))
+	}
 }
