@@ -7,13 +7,16 @@ import (
 )
 
 var (
-	gameboy   = &Gameboy{}
-	memory    = &Memory{}
-	cpu       = &CPU{}
-	ppu       = &PPU{}
+	gameboy = &Gameboy{}
+	memory  = &Memory{}
+	cpu     = &CPU{}
+	ppu     = &PPU{
+		pixels: [GB_W * GB_H]uint32{},
+	}
 	cartridge = &Cartridge{}
 	lcd       = &LCD{}
 	timer     = &Timer{}
+	app       = &App{}
 )
 
 func main() {
@@ -32,19 +35,17 @@ func main() {
 		log.Fatal(err)
 	}
 
-	err = initScreen()
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	memory.init()
+
+	ppu.clearScreen()
 
 	go func() {
 		gameboy.Run()
 	}()
 
 	for {
-		handleEventsScreen()
-		updateScreen()
+		if err := app.Run(); err != nil {
+			log.Fatal(err)
+		}
 	}
 }
