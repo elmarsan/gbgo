@@ -2,7 +2,6 @@ package main
 
 import (
 	"image"
-	"image/color"
 
 	"github.com/hajimehoshi/ebiten/v2"
 )
@@ -26,7 +25,7 @@ func (a *App) Update() error {
 }
 
 func (a *App) Draw(screen *ebiten.Image) {
-	imgRGBA := a.createImgRGBA(ppu.pixels[:])
+	imgRGBA := a.createImgRGBA(ppu.videoBuf[:])
 	img := ebiten.NewImageFromImage(imgRGBA)
 
 	drawopts := &ebiten.DrawImageOptions{}
@@ -38,20 +37,13 @@ func (a *App) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight
 	return 640, 480
 }
 
-func (a *App) createImgRGBA(pixels []uint32) *image.RGBA {
+func (a *App) createImgRGBA(pixels []uint8) *image.RGBA {
 	img := image.NewRGBA(image.Rect(0, 0, GB_W, GB_H))
 
 	for y := 0; y < GB_H; y++ {
 		for x := 0; x < GB_W; x++ {
 			i := y*GB_W + x
-			c := color.RGBA{
-				R: uint8((pixels[i] >> 16) & 0xff),
-				G: uint8((pixels[i] >> 8) & 0xff),
-				B: uint8(pixels[i] & 0xff),
-				A: uint8((pixels[i] >> 24) & 0xff),
-			}
-
-			img.SetRGBA(x, y, c)
+			img.SetRGBA(x, y, palette[pixels[i]])
 		}
 	}
 

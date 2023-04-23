@@ -66,15 +66,24 @@ func (m *Memory) init() {
 	// Interrupt
 	m.write(IF, 0xe1)
 	m.write(IE, 0x00)
+
+	// PPU
+	m.write(LCDC, 0x91)
+	m.write(STAT, 0x81)
+	m.write(SCX, 0)
+	m.write(SCY, 0)
+	m.write(WX, 0)
+	m.write(WY, 0)
+	m.write(LY, 0x91)
+	m.write(BGP, 0xfc)
+
+	// DMA
+	m.write(0xff46, 0xff)
 }
 
 // read reads from memory address.
 func (m *Memory) read(addr uint16) uint8 {
 	switch {
-	// gameboy-doctor debug
-	case addr == LY:
-		return 0x90
-
 	case addr <= CARTRIDGE_END:
 		return cartridge.read(addr)
 
@@ -146,13 +155,13 @@ func (m *Memory) write(addr uint16, val uint8) {
 		m.io[addr-IO_START] = 0
 		break
 
-	case addr <= IO_END:
-		m.io[addr-IO_START] = val
-		break
-
-		// DMA transfer
+	// DMA transfer
 	case addr == 0xff46:
 		m.dmaTransfer(val)
+		break
+
+	case addr <= IO_END:
+		m.io[addr-IO_START] = val
 		break
 
 	case addr <= HRAM_END:
@@ -173,8 +182,7 @@ func (m *Memory) write(addr uint16, val uint8) {
 func (m *Memory) dmaTransfer(val uint8) {
 	addr := uint16(val) * 0x100
 
-	var i uint16
-	for i = 0; i < 0xa0; i++ {
+	for i := uint16(0); i < 0xa0; i++ {
 		m.write(OAM_START+i, m.read(addr+i))
 	}
 }

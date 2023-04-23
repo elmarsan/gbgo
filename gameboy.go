@@ -25,6 +25,7 @@ func (g *Gameboy) Run() {
 			cpu.enablingIme = false
 		}
 
+		ppu.Tick(cpu.ticks)
 		timer.update(cpu.ticks)
 	}
 }

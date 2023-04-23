@@ -11,10 +11,9 @@ var (
 	memory  = &Memory{}
 	cpu     = &CPU{}
 	ppu     = &PPU{
-		pixels: [GB_W * GB_H]uint32{},
+		videoBuf: [GB_W * GB_H]uint8{},
 	}
 	cartridge = &Cartridge{}
-	lcd       = &LCD{}
 	timer     = &Timer{}
 	app       = &App{}
 )
