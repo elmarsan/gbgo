@@ -11,7 +11,35 @@ const (
 	WIN_H = 480
 )
 
-type App struct{}
+type App struct {
+	keys        []ebiten.Key
+	gameboyBtns []uint8
+}
+
+func NewApp() *App {
+	return &App{
+		keys: []ebiten.Key{
+			ebiten.KeyW,
+			ebiten.KeyS,
+			ebiten.KeyA,
+			ebiten.KeyD,
+			ebiten.KeyK,
+			ebiten.KeyL,
+			ebiten.KeyI,
+			ebiten.KeyO,
+		},
+		gameboyBtns: []uint8{
+			BTN_UP,
+			BTN_DOWN,
+			BTN_LEFT,
+			BTN_RIGHT,
+			BTN_A,
+			BTN_B,
+			BTN_START,
+			BTN_SELECT,
+		},
+	}
+}
 
 func (a *App) Run() error {
 	ebiten.SetWindowSize(WIN_X, WIN_H)
@@ -21,6 +49,12 @@ func (a *App) Run() error {
 }
 
 func (a *App) Update() error {
+	for i, key := range a.keys {
+		if ebiten.IsKeyPressed(key) {
+			joypad.pressBtn(a.gameboyBtns[i])
+		}
+	}
+
 	return nil
 }
 

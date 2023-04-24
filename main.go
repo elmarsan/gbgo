@@ -16,6 +16,7 @@ var (
 	cartridge = &Cartridge{}
 	timer     = &Timer{}
 	app       = &App{}
+	joypad    = &Joypad{}
 )
 
 func main() {
@@ -41,6 +42,8 @@ func main() {
 	go func() {
 		gameboy.Run()
 	}()
+
+	app := NewApp()
 
 	for {
 		if err := app.Run(); err != nil {

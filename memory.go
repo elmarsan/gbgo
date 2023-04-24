@@ -79,6 +79,9 @@ func (m *Memory) init() {
 
 	// DMA
 	m.write(0xff46, 0xff)
+
+	// JOYPAD
+	m.write(JOYP, 0xff)
 }
 
 // read reads from memory address.
