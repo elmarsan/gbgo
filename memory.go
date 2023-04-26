@@ -110,6 +110,10 @@ func (m *Memory) read(addr uint16) uint8 {
 		return 0
 
 	case addr <= IO_END:
+		if addr == JOYP {
+			return joypad.Get()
+		}
+
 		return m.io[addr-IO_START]
 
 	case addr <= HRAM_END:
@@ -164,7 +168,12 @@ func (m *Memory) write(addr uint16, val uint8) {
 		break
 
 	case addr <= IO_END:
-		m.io[addr-IO_START] = val
+		if addr == JOYP {
+			joypad.Set(val)
+		} else {
+			m.io[addr-IO_START] = val
+		}
+
 		break
 
 	case addr <= HRAM_END:

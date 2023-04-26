@@ -12,31 +12,20 @@ const (
 )
 
 type App struct {
-	keys        []ebiten.Key
-	gameboyBtns []uint8
+	keyHandler map[ebiten.Key]func(pressed bool)
 }
 
 func NewApp() *App {
 	return &App{
-		keys: []ebiten.Key{
-			ebiten.KeyW,
-			ebiten.KeyS,
-			ebiten.KeyA,
-			ebiten.KeyD,
-			ebiten.KeyK,
-			ebiten.KeyL,
-			ebiten.KeyI,
-			ebiten.KeyO,
-		},
-		gameboyBtns: []uint8{
-			BTN_UP,
-			BTN_DOWN,
-			BTN_LEFT,
-			BTN_RIGHT,
-			BTN_A,
-			BTN_B,
-			BTN_START,
-			BTN_SELECT,
+		keyHandler: map[ebiten.Key]func(pressed bool){
+			ebiten.KeyW: func(pressed bool) { joypad.Up = pressed },
+			ebiten.KeyS: func(pressed bool) { joypad.Down = pressed },
+			ebiten.KeyA: func(pressed bool) { joypad.Left = pressed },
+			ebiten.KeyD: func(pressed bool) { joypad.Right = pressed },
+			ebiten.KeyK: func(pressed bool) { joypad.A = pressed },
+			ebiten.KeyL: func(pressed bool) { joypad.B = pressed },
+			ebiten.KeyI: func(pressed bool) { joypad.Start = pressed },
+			ebiten.KeyO: func(pressed bool) { joypad.Select = pressed },
 		},
 	}
 }
@@ -49,10 +38,8 @@ func (a *App) Run() error {
 }
 
 func (a *App) Update() error {
-	for i, key := range a.keys {
-		if ebiten.IsKeyPressed(key) {
-			joypad.pressBtn(a.gameboyBtns[i])
-		}
+	for key, handler := range a.keyHandler {
+		handler(ebiten.IsKeyPressed(key))
 	}
 
 	return nil

@@ -1,57 +1,69 @@
 package main
 
 // Joypad represents game boy input controller.
-type Joypad struct{}
+// It holds which keys are down/up.
+type Joypad struct {
+	Start  bool
+	Select bool
+	B      bool
+	A      bool
+	Down   bool
+	Up     bool
+	Left   bool
+	Right  bool
 
-// Gameboy buttons
-const (
-	BTN_A = iota
-	BTN_B
-	BTN_UP
-	BTN_DOWN
-	BTN_RIGHT
-	BTN_LEFT
-	BTN_SELECT
-	BTN_START
-)
+	selectActionBtn    bool
+	selectDirectionBtn bool
+}
 
 // JOYP represents Joypad register
 const JOYP = 0xff00
 
-var joypadBtnMap = map[uint8]uint8{
-	BTN_A:      0,
-	BTN_RIGHT:  0,
-	BTN_B:      1,
-	BTN_LEFT:   1,
-	BTN_UP:     2,
-	BTN_SELECT: 2,
-	BTN_DOWN:   3,
-	BTN_START:  3,
-}
+// Get returns uint8 value indicating which keys are currently pressed.
+func (j *Joypad) Get() uint8 {
+	var state uint8 = 0xcf
 
-// pressBtn simulates button press action.
-func (j *Joypad) pressBtn(btn uint8) {
-	joyp := memory.read(JOYP)
-	bit, _ := joypadBtnMap[btn]
+	if j.selectActionBtn {
+		if j.Start {
+			state = clearBit(state, 3)
+		}
 
-	memory.write(JOYP, setBit(joyp, bit))
-	gameboy.reqInterrupt(IT_JOYPAD)
-}
+		if j.Select {
+			state = clearBit(state, 2)
+		}
 
-// releaseBtn simulates button release action.
-func (j *Joypad) releaseBtn(btn uint8) {
-	joyp := memory.read(JOYP)
-	bit, _ := joypadBtnMap[btn]
-	memory.write(JOYP, clearBit(joyp, bit))
-	gameboy.reqInterrupt(IT_JOYPAD)
-}
+		if j.B {
+			state = clearBit(state, 1)
+		}
 
-func (j *Joypad) setActionBtns() {
-	joyp := memory.read(JOYP)
-
-	if isBitSet(joyp, 5) {
-		memory.write(JOYP, clearBit(joyp, 5))
-	} else {
-		memory.write(JOYP, setBit(joyp, 5))
+		if j.A {
+			state = clearBit(state, 0)
+		}
 	}
+
+	if j.selectDirectionBtn {
+		if j.Down {
+			state = clearBit(state, 3)
+		}
+
+		if j.Up {
+			state = clearBit(state, 2)
+		}
+
+		if j.Left {
+			state = clearBit(state, 1)
+		}
+
+		if j.Right {
+			state = clearBit(state, 0)
+		}
+	}
+
+	return state
+}
+
+// Set indicates whether an action or direction key is pressed.
+func (j *Joypad) Set(val uint8) {
+	j.selectActionBtn = !isBitSet(val, 5)
+	j.selectDirectionBtn = !isBitSet(val, 4)
 }
