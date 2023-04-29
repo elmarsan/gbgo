@@ -142,7 +142,7 @@ func (c *Cartridge) load(p string) error {
 	}
 
 	c.size = uint32(len(d))
-	data := make([]uint8, 0x8000)
+	data := make([]uint8, c.size)
 	copy(data, d)
 	c.data = data
 
@@ -163,6 +163,8 @@ func (c *Cartridge) load(p string) error {
 	if c.header.checksum != (checksum & 0xff) {
 		return fmt.Errorf("Unable to load rom")
 	}
+
+	c.header.catridgeType = b.Bytes()[0x147]
 
 	return nil
 }

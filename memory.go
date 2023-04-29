@@ -165,6 +165,7 @@ func (m *Memory) write(addr uint16, val uint8) {
 	// DMA transfer
 	case addr == 0xff46:
 		m.dmaTransfer(val)
+		memory.io[addr-IO_START] = val
 		break
 
 	case addr <= IO_END:

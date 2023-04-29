@@ -7,12 +7,10 @@ import (
 )
 
 var (
-	gameboy = &Gameboy{}
-	memory  = &Memory{}
-	cpu     = &CPU{}
-	ppu     = &PPU{
-		videoBuf: [GB_W * GB_H]uint8{},
-	}
+	gameboy   = &Gameboy{}
+	memory    = &Memory{}
+	cpu       = &CPU{}
+	ppu       = NewPPU()
 	cartridge = &Cartridge{}
 	timer     = &Timer{}
 	app       = &App{}
@@ -36,8 +34,6 @@ func main() {
 	}
 
 	memory.init()
-
-	ppu.clearScreen()
 
 	go func() {
 		gameboy.Run()
