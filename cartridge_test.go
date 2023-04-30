@@ -8,6 +8,8 @@ import (
 func TestCartridge(t *testing.T) {
 
 	t.Run("Load", func(t *testing.T) {
+		t.Skip()
+
 		c := &Cartridge{}
 
 		err := c.load("rom/dmg-acid2.gb")

@@ -33,6 +33,7 @@ func main() {
 		log.Fatal(err)
 	}
 
+	cpu.init()
 	memory.init()
 
 	go func() {
