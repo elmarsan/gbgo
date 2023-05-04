@@ -1,6 +1,8 @@
 package main
 
-type Timer struct{}
+type Timer struct {
+	ticks uint
+}
 
 const (
 	// Divider register
@@ -65,12 +67,13 @@ func (t *Timer) update(cycles int) {
 	t.incDiv(cycles)
 
 	if t.tacEnabled() {
-		timerClockSum := int(cycles)
-		clockSpeed := t.clockFreq()
+		t.ticks += uint(cycles)
+		freq := uint(t.clockFreq())
 
-		for timerClockSum >= clockSpeed {
+		for t.ticks >= freq {
+			t.ticks -= freq
+
 			t.incTIMA()
-			timerClockSum -= clockSpeed
 		}
 	}
 }

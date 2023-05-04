@@ -77,11 +77,11 @@ func TestBlargg(t *testing.T) {
 			targetPc: 0xc7d2,
 			seconds:  60,
 		},
-		// {
-		// 	name:     "02-interrupts.gb",
-		// 	targetPc: 0,
-		// 	seconds:  60,
-		// },
+		{
+			name:     "02-interrupts.gb",
+			targetPc: 0xc7f4,
+			seconds:  60,
+		},
 		{
 			name:     "03-op sp,hl.gb",
 			targetPc: 0xcb44,
