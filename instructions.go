@@ -1124,8 +1124,7 @@ var instructions = [0x100]func(){
 
 	0xe0: func() {
 		// LDH (a8), A
-		lsb := memory.read(cpu.readPc())
-		addr := joinu8(0xff, lsb)
+		addr := 0xff00 + uint16(memory.read(cpu.readPc()))
 		memory.write(addr, cpu.read8Reg(REG_A))
 	},
 	0xe1: func() {
@@ -1188,8 +1187,7 @@ var instructions = [0x100]func(){
 
 	0xf0: func() {
 		// LDH A, (a8)
-		lsb := memory.read(cpu.readPc())
-		addr := joinu8(0xff, lsb)
+		addr := 0xff00 + uint16(memory.read(cpu.readPc()))
 		cpu.set8Reg(REG_A, memory.read(addr))
 	},
 	0xf1: func() {

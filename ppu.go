@@ -211,15 +211,15 @@ func (ppu *PPU) renderTiles() {
 		b2 := memory.read(tileAddress + 1)
 
 		for bit := uint8(0); bit < 8; bit++ {
-			var bufferX uint8
+			var pixel uint8
 
 			if window {
-				bufferX = uint8(int(mapOffsetX) + int(bit) + wx)
+				pixel = uint8(int(mapOffsetX) + int(bit) + wx)
 			} else {
-				bufferX = uint8(mapOffsetX) + bit - scx
+				pixel = uint8(mapOffsetX) + bit - scx
 			}
 
-			if bufferX >= GB_W || ppu.scanline > 144 {
+			if pixel >= GB_W || ppu.scanline > 144 {
 				continue
 			}
 
@@ -232,9 +232,8 @@ func (ppu *PPU) renderTiles() {
 			}
 
 			lineWidth := uint(ppu.scanline) * GB_W
-			position := lineWidth + uint(bufferX)
+			position := lineWidth + uint(pixel)
 			color := (palette >> (colorIndex * 2)) & 0x03
-
 			ppu.videoBuf[position] = color
 		}
 	}
@@ -260,8 +259,77 @@ func (ppu *PPU) getTileDataAndTileMap() (uint16, uint16) {
 	return data, addr
 }
 
-// TODO
-func (ppu *PPU) renderSprites() {}
+// renderSprites render sprites into videoBuf.
+func (ppu *PPU) renderSprites() {
+	var (
+		lcdc     = memory.read(LCDC)
+		palette0 = memory.read(OBP0)
+		palette1 = memory.read(OBP1)
+	)
+
+	// Get sprite height
+	var ySize int32 = 8
+	if isBitSet(lcdc, 2) {
+		ySize = 16
+	}
+
+	for sprite := uint16(0); sprite < 40; sprite++ {
+		index := sprite * 4
+
+		yPos := int32(memory.read(uint16(0xFE00+index))) - 16
+		if int32(ppu.scanline) < yPos || int32(ppu.scanline) >= (yPos+ySize) {
+			continue
+		}
+
+		xPos := int32(memory.read(uint16(0xFE00+index+1))) - 8
+		tileData := memory.read(uint16(0xFE00 + index + 2))
+		flags := memory.read(uint16(0xFE00 + index + 3))
+
+		// Sprite flags
+		// TODO: check xFlip and priority
+		palette := isBitSet(flags, 4)
+		yFlip := isBitSet(flags, 6)
+
+		line := int32(ppu.scanline) - yPos
+		if yFlip {
+			line = ySize - line - 1
+		}
+
+		spriteAddr := (uint16(tileData) * 16) + uint16(line*2)
+		b1 := memory.read(spriteAddr)
+		b2 := memory.read(spriteAddr + 1)
+
+		for tilePixel := uint8(0); tilePixel < 8; tilePixel++ {
+			pixel := int16(xPos) + int16(7-tilePixel)
+
+			if pixel < 0 || pixel >= GB_W {
+				continue
+			}
+
+			var colorIndex uint8
+			if (b1 & (0x1 << (7 - tilePixel))) != 0 {
+				colorIndex = 1
+			}
+			if (b2 & (0x1 << (7 - tilePixel))) != 0 {
+				colorIndex |= 2
+			}
+
+			if colorIndex == 0 {
+				continue
+			}
+
+			var spritePalette = palette0
+			if palette {
+				spritePalette = palette1
+			}
+
+			lineWidth := uint(ppu.scanline) * GB_W
+			position := lineWidth + uint(pixel)
+			color := (spritePalette >> (colorIndex * 2)) & 0x03
+			ppu.videoBuf[position] = color
+		}
+	}
+}
 
 // compareLY compares LY and LYC
 func (ppu *PPU) compareLY() {

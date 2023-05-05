@@ -22,27 +22,27 @@ var isrHandler = map[uint8]func(){
 	IT_VBLANK: func() {
 		ifFlag := memory.read(IF)
 		memory.write(IF, clearBit(ifFlag, IT_VBLANK))
-		cpu.call(uint16(memory.read(0x40)))
+		cpu.call(0x0040)
 	},
 	IT_LCD_STAT: func() {
 		ifFlag := memory.read(IF)
 		memory.write(IF, clearBit(ifFlag, IT_LCD_STAT))
-		cpu.call(uint16(memory.read(0x48)))
+		cpu.call(0x0048)
 	},
 	IT_TIMER: func() {
 		ifFlag := memory.read(IF)
 		memory.write(IF, clearBit(ifFlag, IT_TIMER))
-		cpu.call(uint16(memory.read(0x50)))
+		cpu.call(0x0050)
 	},
 	IT_SERIAL: func() {
 		ifFlag := memory.read(IF)
 		memory.write(IF, clearBit(ifFlag, IT_SERIAL))
-		cpu.call(uint16(memory.read(0x58)))
+		cpu.call(0x0058)
 	},
 	IT_JOYPAD: func() {
 		ifFlag := memory.read(IF)
 		memory.write(IF, clearBit(ifFlag, IT_JOYPAD))
-		cpu.call(uint16(memory.read(0x60)))
+		cpu.call(0x0060)
 	},
 }
 
