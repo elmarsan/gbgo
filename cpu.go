@@ -73,7 +73,7 @@ func (cpu *CPU) init() {
 
 // execute executes next instruction.
 func (cpu *CPU) execute() {
-	debug.logState()
+	// debug.logState()
 
 	cpu.ticks = 0
 	pc := cpu.readPc()
