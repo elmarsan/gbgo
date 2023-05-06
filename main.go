@@ -37,7 +37,9 @@ func main() {
 	memory.init()
 
 	go func() {
-		gameboy.Run()
+		for {
+			gameboy.Run()
+		}
 	}()
 
 	app := NewApp()
