@@ -2,12 +2,31 @@ package main
 
 // PPU represents game boy pixel processing unit.
 type PPU struct {
-	videoBuf       [GB_W * GB_H]uint8
-	vBlankDots     int
-	statusModeDots int
-	statusMode     int
-	scanline       uint8
-	vblankLine     int
+	// videoBuf contains LCD pixels with palette index values.
+	videoBuf [GB_W * GB_H]uint8
+
+	// vBlankClockCycles is used to track vBlank mode.
+	vBlankClockCycles int
+
+	// statusClockCycles is used to track frame clock cycles.
+	statusClockCycles int
+
+	// statusMode holds rendering mode
+	// MODE 0 HBLANK
+	// MODE 1 VBLANK
+	// MODE 2 OAM SCAN
+	// MODE 3 DRAWING PIXELS
+	statusMode int
+
+	// scanline keeps current horizontal line.
+	// It might be about to be drawn, being drawn, or just been drawn.
+	scanline uint8
+
+	// vblankline keeps current vblankline. (0-10)
+	vblankLine int
+
+	// bus represents memory bus used by Gameboy.
+	bus *MemoryBus
 }
 
 const (
@@ -34,126 +53,135 @@ const (
 	DRAW_MODE            // MODE 3 DRAWING PIXELS
 )
 
-func NewPPU() *PPU {
+// NewPPU creates and returns a new PPU instance.
+// Ppu members are set defaults of DMG boot sequence.
+func NewPPU(bus *MemoryBus) *PPU {
 	videoBuf := [GB_W * GB_H]uint8{}
 
+	// Set all pixels to palette index 0
 	for i := 0; i < len(videoBuf); i++ {
 		videoBuf[i] = 0
 	}
 
 	return &PPU{
-		videoBuf:       videoBuf,
-		vBlankDots:     0,
-		statusModeDots: 0,
-		statusMode:     1,
-		scanline:       144,
-		vblankLine:     0,
+		videoBuf:          videoBuf,
+		vBlankClockCycles: 0,
+		statusClockCycles: 0,
+		// PPU starts in VBLANK mode
+		statusMode: 1,
+		// First scanline line must be 144
+		scanline:   144,
+		vblankLine: 0,
+		bus:        bus,
 	}
 }
 
 // Ticks emulates ppu ticks.
-func (ppu *PPU) Tick(cycles int) {
-	lcdc := memory.read(LCDC)
+func (ppu *PPU) Tick(clockCycles int) {
+	lcdc := ppu.bus.read(LCDC)
 
 	if !isBitSet(lcdc, 7) {
 		return
 	}
 
-	ppu.statusModeDots += cycles
+	ppu.statusClockCycles += clockCycles
 
 	switch ppu.statusMode {
 
 	case HBLANK_MODE:
-		if ppu.statusModeDots >= 204 {
-			ppu.statusModeDots -= 204
+		if ppu.statusClockCycles >= 204 {
+			ppu.statusClockCycles -= 204
 			ppu.updateStatusMode(OAM_SCAN_MODE)
 			ppu.scanline++
-			memory.write(LY, ppu.scanline)
+			ppu.bus.write(LY, ppu.scanline)
 			ppu.compareLY()
 
 			// Vblank mode starts
 			if ppu.scanline == 144 {
 				ppu.updateStatusMode(VBLANK_MODE)
 
-				stat := memory.read(STAT)
+				stat := ppu.bus.read(STAT)
 				if isBitSet(stat, 4) {
-					gameboy.reqInterrupt(IT_LCD_STAT)
+					gb.reqInterrupt(IT_LCD_STAT)
 				}
 			} else {
-				stat := memory.read(STAT)
+				stat := ppu.bus.read(STAT)
 				if isBitSet(stat, 5) {
-					gameboy.reqInterrupt(IT_LCD_STAT)
+					gb.reqInterrupt(IT_LCD_STAT)
 				}
 			}
 		}
 
 	case VBLANK_MODE:
-		ppu.vBlankDots += cycles
+		ppu.vBlankClockCycles += clockCycles
 
-		if ppu.vBlankDots >= 456 {
-			ppu.vBlankDots -= 456
+		if ppu.vBlankClockCycles >= 456 {
+			ppu.vBlankClockCycles -= 456
 			ppu.vblankLine++
 
 			if ppu.vblankLine <= 9 {
 				ppu.scanline++
-				memory.write(LY, ppu.scanline)
+				ppu.bus.write(LY, ppu.scanline)
 				ppu.compareLY()
 			}
 		}
 
-		if (ppu.statusModeDots >= 4104) && (ppu.vBlankDots >= 4) && (ppu.scanline == 153) {
+		if (ppu.statusClockCycles >= 4104) && (ppu.vBlankClockCycles >= 4) && (ppu.scanline == 153) {
 			ppu.scanline = 0
-			memory.write(LY, ppu.scanline)
+			ppu.bus.write(LY, ppu.scanline)
 			ppu.compareLY()
 		}
 
 		// Vblank mode ends
-		if ppu.statusModeDots >= 4560 {
-			ppu.statusModeDots -= 4560
+		if ppu.statusClockCycles >= 4560 {
+			ppu.statusClockCycles -= 4560
 			ppu.updateStatusMode(OAM_SCAN_MODE)
 
-			stat := memory.read(STAT)
+			stat := ppu.bus.read(STAT)
 			if isBitSet(stat, 5) {
-				gameboy.reqInterrupt(IT_LCD_STAT)
+				gb.reqInterrupt(IT_LCD_STAT)
 			}
 		}
 
 	case OAM_SCAN_MODE:
-		if ppu.statusModeDots >= 80 {
-			ppu.statusModeDots -= 80
+		if ppu.statusClockCycles >= 80 {
+			ppu.statusClockCycles -= 80
 			ppu.updateStatusMode(DRAW_MODE)
 		}
 
 	case DRAW_MODE:
-		if ppu.statusModeDots >= 172 {
-			ppu.statusModeDots -= 172
+		if ppu.statusClockCycles >= 172 {
+			ppu.statusClockCycles -= 172
 
 			ppu.renderScanline()
 			ppu.updateStatusMode(HBLANK_MODE)
 
-			stat := memory.read(STAT)
+			stat := ppu.bus.read(STAT)
 			if isBitSet(stat, 3) {
-				gameboy.reqInterrupt(IT_LCD_STAT)
+				gb.reqInterrupt(IT_LCD_STAT)
 			}
 		}
 	}
 }
 
+// updateStatusMode updates status mode.
+// If the mode is VBLANK_MODE, it sets the vblankLine to 0, sets the vBlankClockCycles to the current statusClockCycles,
+// and requests a VBLANK interrupt.
 func (ppu *PPU) updateStatusMode(mode int) {
 	ppu.statusMode = mode
-	stat := memory.read(STAT)
-	memory.write(STAT, uint8(stat&0xfc)|uint8(ppu.statusMode&0x3))
+	stat := ppu.bus.read(STAT)
+	ppu.bus.write(STAT, uint8(stat&0xfc)|uint8(ppu.statusMode&0x3))
 
 	if mode == VBLANK_MODE {
 		ppu.vblankLine = 0
-		ppu.vBlankDots = ppu.statusModeDots
-		gameboy.reqInterrupt(IT_VBLANK)
+		ppu.vBlankClockCycles = ppu.statusClockCycles
+		gb.reqInterrupt(IT_VBLANK)
 	}
 }
 
 // renderScanline renders scanline into videobuf.
 func (ppu *PPU) renderScanline() {
-	lcdc := memory.read(LCDC)
+	lcdc := ppu.bus.read(LCDC)
 
 	if isBitSet(lcdc, 0) {
 		ppu.renderTiles()
@@ -166,12 +194,12 @@ func (ppu *PPU) renderScanline() {
 
 // renderTiles render tiles into videoBuf.
 func (ppu *PPU) renderTiles() {
-	lcdc := memory.read(LCDC)
-	scx := memory.read(SCX)
-	scy := memory.read(SCY)
-	wx := int(memory.read(WX)) - 7
-	wy := memory.read(WY)
-	palette := memory.read(BGP)
+	lcdc := ppu.bus.read(LCDC)
+	scx := ppu.bus.read(SCX)
+	scy := ppu.bus.read(SCY)
+	wx := int(ppu.bus.read(WX)) - 7
+	wy := ppu.bus.read(WY)
+	palette := ppu.bus.read(BGP)
 
 	tileData, tileMap := ppu.getTileDataAndTileMap()
 
@@ -197,18 +225,18 @@ func (ppu *PPU) renderTiles() {
 		var tile uint8
 
 		if tileData == 0x8800 {
-			tile = uint8((int8(memory.read(tileMap + uint16(tileRow) + x))))
+			tile = uint8((int8(ppu.bus.read(tileMap + uint16(tileRow) + x))))
 			tile += 128
 		} else {
-			tile = memory.read(tileMap + uint16(tileRow) + x)
+			tile = ppu.bus.read(tileMap + uint16(tileRow) + x)
 		}
 
 		mapOffsetX := x * 8
 		tile16 := uint16(tile) * 16
 		tileAddress := tileData + tile16 + uint16(line)
 
-		b1 := memory.read(tileAddress)
-		b2 := memory.read(tileAddress + 1)
+		b1 := ppu.bus.read(tileAddress)
+		b2 := ppu.bus.read(tileAddress + 1)
 
 		for bit := uint8(0); bit < 8; bit++ {
 			var pixel uint8
@@ -241,7 +269,7 @@ func (ppu *PPU) renderTiles() {
 
 // getTileDataAndTileMap returns vram tile data and vram tile map based on LCDC.
 func (ppu *PPU) getTileDataAndTileMap() (uint16, uint16) {
-	lcdc := memory.read(LCDC)
+	lcdc := ppu.bus.read(LCDC)
 
 	var (
 		data uint16 = 0x8800
@@ -262,9 +290,9 @@ func (ppu *PPU) getTileDataAndTileMap() (uint16, uint16) {
 // renderSprites render sprites into videoBuf.
 func (ppu *PPU) renderSprites() {
 	var (
-		lcdc     = memory.read(LCDC)
-		palette0 = memory.read(OBP0)
-		palette1 = memory.read(OBP1)
+		lcdc     = ppu.bus.read(LCDC)
+		palette0 = ppu.bus.read(OBP0)
+		palette1 = ppu.bus.read(OBP1)
 	)
 
 	// Get sprite height
@@ -276,14 +304,14 @@ func (ppu *PPU) renderSprites() {
 	for sprite := uint16(0); sprite < 40; sprite++ {
 		index := sprite * 4
 
-		yPos := int32(memory.read(uint16(0xFE00+index))) - 16
+		yPos := int32(ppu.bus.read(uint16(0xFE00+index))) - 16
 		if int32(ppu.scanline) < yPos || int32(ppu.scanline) >= (yPos+ySize) {
 			continue
 		}
 
-		xPos := int32(memory.read(uint16(0xFE00+index+1))) - 8
-		tileData := memory.read(uint16(0xFE00 + index + 2))
-		flags := memory.read(uint16(0xFE00 + index + 3))
+		xPos := int32(ppu.bus.read(uint16(0xFE00+index+1))) - 8
+		tileData := ppu.bus.read(uint16(0xFE00 + index + 2))
+		flags := ppu.bus.read(uint16(0xFE00 + index + 3))
 
 		// Sprite flags
 		// TODO: check xFlip and priority
@@ -296,8 +324,8 @@ func (ppu *PPU) renderSprites() {
 		}
 
 		spriteAddr := (uint16(tileData) * 16) + uint16(line*2)
-		b1 := memory.read(spriteAddr)
-		b2 := memory.read(spriteAddr + 1)
+		b1 := ppu.bus.read(spriteAddr)
+		b2 := ppu.bus.read(spriteAddr + 1)
 
 		for tilePixel := uint8(0); tilePixel < 8; tilePixel++ {
 			pixel := int16(xPos) + int16(7-tilePixel)
@@ -333,16 +361,16 @@ func (ppu *PPU) renderSprites() {
 
 // compareLY compares LY and LYC
 func (ppu *PPU) compareLY() {
-	lyc := memory.read(LYC)
-	status := memory.read(STAT)
+	lyc := ppu.bus.read(LYC)
+	status := ppu.bus.read(STAT)
 
 	if ppu.scanline == lyc {
-		memory.write(STAT, setBit(status, 2))
+		ppu.bus.write(STAT, setBit(status, 2))
 
-		if isBitSet(memory.read(STAT), 6) {
-			gameboy.reqInterrupt(IT_LCD_STAT)
+		if isBitSet(ppu.bus.read(STAT), 6) {
+			gb.reqInterrupt(IT_LCD_STAT)
 		}
 	} else {
-		memory.write(STAT, clearBit(status, 2))
+		ppu.bus.write(STAT, clearBit(status, 2))
 	}
 }

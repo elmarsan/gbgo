@@ -11,82 +11,62 @@ type CPU struct {
 	h uint8
 	l uint8
 
+	// sp represents stack pointer register.
 	sp uint16
+
+	// pc represents program counter register.
 	pc uint16
 
-	halted      bool
-	ime         bool
+	// halted indicates if cpu is in low-power state.
+	halted bool
+
+	// ime keeps a bool indicating whether interrupts are enabled or not.
+	ime bool
+
+	// enablingIme is set as previous step before enable/disable IME.
 	enablingIme bool
 
-	ticks int
+	// clockCycles holds clock cycles elapsed during previous instruction execution.
+	clockCycles int
+
+	// bus represents memory bus used by Gameboy.
+	bus *MemoryBus
 }
 
-// CPU8Register represents 8 bit register.
-type CPU8Register int
-
-// 8 bits registers
-const (
-	REG_A CPU8Register = iota
-	REG_F
-	REG_B
-	REG_C
-	REG_D
-	REG_E
-	REG_H
-	REG_L
-)
-
-// CPU16Register represents 16 bit register.
-type CPU16Register int
-
-// 16 bits registers
-const (
-	REG_AF = iota
-	REG_BC
-	REG_DE
-	REG_HL
-	REG_PC
-	REG_SP
-)
-
-type CPUFlag int
-
-const (
-	C CPUFlag = iota // bit 4
-	H                // bit 5
-	N                // bit 6
-	Z                // bit 7
-)
-
-func (cpu *CPU) init() {
-	cpu.a = 0x01
-	cpu.f = 0xb0
-	cpu.b = 0x00
-	cpu.c = 0x13
-	cpu.d = 0x00
-	cpu.e = 0xd8
-	cpu.h = 0x01
-	cpu.l = 0x4d
-	cpu.sp = 0xfffe
-	cpu.pc = 0x0100
+// NewCPU creates and returns a new CPU instance.
+// Register values are set to defaults of DMG boot sequence.
+func NewCPU(bus *MemoryBus) *CPU {
+	return &CPU{
+		a:   0x01,
+		f:   0xb0,
+		b:   0x00,
+		c:   0x13,
+		d:   0x00,
+		e:   0xd8,
+		h:   0x01,
+		l:   0x4d,
+		sp:  0xfffe,
+		pc:  0x0100,
+		bus: bus,
+	}
 }
 
-// execute executes next instruction.
+// execute fetchs next opcode and executes the corresponding instruction.
 func (cpu *CPU) execute() {
 	// debug.logState()
 
-	cpu.ticks = 0
+	cpu.clockCycles = 0
 	pc := cpu.readPc()
-	opcode := memory.read(pc)
+	opcode := cpu.bus.read(pc)
 
 	if opcode == 0xcb {
 		pc := cpu.readPc()
-		opcode := memory.read(pc)
+		opcode := cpu.bus.read(pc)
 		prefixedInstructions[opcode]()
-		cpu.ticks += cbInstructionCycles[opcode] * 4
+		cpu.clockCycles += cbInstructionCycles[opcode] * 4
 	} else {
 		instructions[opcode]()
-		cpu.ticks += instructionCycles[opcode] * 4
+		cpu.clockCycles += instructionCycles[opcode] * 4
 	}
 }
 
@@ -96,116 +76,6 @@ func (cpu *CPU) readPc() uint16 {
 	cpu.pc++
 
 	return pc
-}
-
-// read8Reg reads and returns 8 bit register value.
-func (cpu *CPU) read8Reg(reg CPU8Register) uint8 {
-	switch reg {
-	case REG_A:
-		return cpu.a
-	case REG_F:
-		return cpu.f
-	case REG_B:
-		return cpu.b
-	case REG_C:
-		return cpu.c
-	case REG_D:
-		return cpu.d
-	case REG_E:
-		return cpu.e
-	case REG_H:
-		return cpu.h
-	case REG_L:
-		return cpu.l
-	default:
-		// log.Fatalf("Unknown register %s", reg)
-		return 0
-	}
-}
-
-// read16Reg reads and returns 16 bit register value.
-func (cpu *CPU) read16Reg(reg CPU16Register) uint16 {
-	switch reg {
-	case REG_AF:
-		return joinu8(cpu.a, cpu.f)
-	case REG_BC:
-		return joinu8(cpu.b, cpu.c)
-	case REG_DE:
-		return joinu8(cpu.d, cpu.e)
-	case REG_HL:
-		return joinu8(cpu.h, cpu.l)
-	case REG_PC:
-		return cpu.pc
-	case REG_SP:
-		return cpu.sp
-	default:
-		// log.Fatalf("Unknown register %s", reg)
-		return 0
-	}
-}
-
-// set8Reg sets the value of 8 bit register
-func (cpu *CPU) set8Reg(reg CPU8Register, val uint8) {
-	switch reg {
-	case REG_A:
-		cpu.a = val
-		break
-	case REG_F:
-		cpu.f = val
-		break
-	case REG_B:
-		cpu.b = val
-		break
-	case REG_C:
-		cpu.c = val
-		break
-	case REG_D:
-		cpu.d = val
-		break
-	case REG_E:
-		cpu.e = val
-		break
-	case REG_H:
-		cpu.h = val
-		break
-	case REG_L:
-		cpu.l = val
-		break
-	default:
-		// log.Fatalf("Unknown register %s", reg)
-		break
-	}
-}
-
-// set16Reg sets the value of 16 bit register
-func (cpu *CPU) set16Reg(reg CPU16Register, val uint16) {
-	switch reg {
-	case REG_AF:
-		cpu.a = hi(val)
-		cpu.f = lo(val)
-		break
-	case REG_BC:
-		cpu.b = hi(val)
-		cpu.c = lo(val)
-		break
-	case REG_DE:
-		cpu.d = hi(val)
-		cpu.e = lo(val)
-		break
-	case REG_HL:
-		cpu.h = hi(val)
-		cpu.l = lo(val)
-		break
-	case REG_SP:
-		cpu.sp = val
-		break
-	case REG_PC:
-		cpu.pc = val
-		break
-	default:
-		// log.Fatalf("Unknown register %s", reg)
-		break
-	}
 }
 
 // load8Reg loads b into a.
@@ -425,16 +295,16 @@ func (cpu *CPU) rrca8Reg(a CPU8Register) {
 // pushSp pushes a register on top of the stack pointer.
 func (cpu *CPU) pushSp(a CPU16Register) {
 	val := cpu.read16Reg(a)
-	memory.write(cpu.sp-1, hi(val))
-	memory.write(cpu.sp-2, lo(val))
+	cpu.bus.write(cpu.sp-1, hi(val))
+	cpu.bus.write(cpu.sp-2, lo(val))
 	cpu.sp -= 2
 }
 
-// popSp pops memory address from top of the stack pointer.
+// popSp pops cpu.bus address from top of the stack pointer.
 // It reads the value of the address and stores in a register.
 func (cpu *CPU) popSp(a CPU16Register) {
-	lsb := memory.read(cpu.sp)
-	msb := memory.read(cpu.sp + 1)
+	lsb := cpu.bus.read(cpu.sp)
+	msb := cpu.bus.read(cpu.sp + 1)
 	val := joinu8(msb, lsb)
 
 	cpu.set16Reg(a, val)
@@ -512,7 +382,7 @@ func (cpu *CPU) bit8Reg(a CPU8Register, bit uint8) {
 // It set flags depending on result.
 func (cpu *CPU) bitHL(bit uint8) {
 	hl := cpu.read16Reg(REG_HL)
-	val := memory.read(hl)
+	val := cpu.bus.read(hl)
 
 	cpu.setH(true)
 	cpu.setN(false)
@@ -537,9 +407,9 @@ func (cpu *CPU) swap8Reg(a CPU8Register) {
 // It set flags depending on result.
 func (cpu *CPU) swapHL() {
 	addr := cpu.read16Reg(REG_HL)
-	val := memory.read(addr)
+	val := cpu.bus.read(addr)
 	swap := swapNibbleU8(val)
-	memory.write(addr, swap)
+	cpu.bus.write(addr, swap)
 
 	cpu.setC(false)
 	cpu.setH(false)
@@ -566,10 +436,10 @@ func (cpu *CPU) srl8Reg(a CPU8Register) {
 // It set flags depending on result.
 func (cpu *CPU) srlHL() {
 	addr := cpu.read16Reg(REG_HL)
-	val := memory.read(addr)
+	val := cpu.bus.read(addr)
 	carry := readBit(val, 0)
 	shift := val >> 1
-	memory.write(addr, shift)
+	cpu.bus.write(addr, shift)
 
 	cpu.setC(carry == 1)
 	cpu.setH(false)
@@ -594,9 +464,9 @@ func (cpu *CPU) sra8Reg(a CPU8Register) {
 // It set flags depending on result.
 func (cpu *CPU) sraHL() {
 	addr := cpu.read16Reg(REG_HL)
-	val := memory.read(addr)
+	val := cpu.bus.read(addr)
 	rotation := (val & 128) | (val >> 1)
-	memory.write(addr, rotation)
+	cpu.bus.write(addr, rotation)
 
 	cpu.setC((val & 1) == 1)
 	cpu.setH(false)
@@ -622,9 +492,9 @@ func (cpu *CPU) sla8Reg(a CPU8Register) {
 // It set flags depending on result.
 func (cpu *CPU) slaHL() {
 	addr := cpu.read16Reg(REG_HL)
-	val := memory.read(addr)
+	val := cpu.bus.read(addr)
 	rotation := (val << 1) & 0xff
-	memory.write(addr, rotation)
+	cpu.bus.write(addr, rotation)
 
 	cpu.setC(isBitSet(val, 7))
 	cpu.setH(false)
@@ -653,14 +523,14 @@ func (cpu *CPU) rl8Reg(a CPU8Register) {
 // It set flags depending on result.
 func (cpu *CPU) rlHL() {
 	addr := cpu.read16Reg(REG_HL)
-	val := memory.read(addr)
+	val := cpu.bus.read(addr)
 	var c uint8 = 1
 	if !cpu.C() {
 		c = 0
 	}
 
 	rotation := (val<<1)&0xff | c
-	memory.write(addr, rotation)
+	cpu.bus.write(addr, rotation)
 
 	cpu.setC(isBitSet(val, 7))
 	cpu.setH(false)
@@ -686,14 +556,14 @@ func (cpu *CPU) rr8Reg(a CPU8Register) {
 // It set flags depending on result.
 func (cpu *CPU) rrHL() {
 	addr := cpu.read16Reg(REG_HL)
-	val := memory.read(addr)
+	val := cpu.bus.read(addr)
 	var c uint8 = 1
 	if !cpu.C() {
 		c = 0
 	}
 
 	rotation := (val >> 1) | (c << 7)
-	memory.write(addr, rotation)
+	cpu.bus.write(addr, rotation)
 
 	cpu.setC((val & 1) == 1)
 	cpu.setH(false)
@@ -719,10 +589,10 @@ func (cpu *CPU) rlc8Reg(a CPU8Register) {
 // It set flags depending on result.
 func (cpu *CPU) rlcHL() {
 	addr := cpu.read16Reg(REG_HL)
-	val := memory.read(addr)
+	val := cpu.bus.read(addr)
 	carry := val >> 7
 	rotation := (val<<1)&0xff | carry
-	memory.write(addr, rotation)
+	cpu.bus.write(addr, rotation)
 
 	cpu.setC(carry == 1)
 	cpu.setH(false)
@@ -748,10 +618,10 @@ func (cpu *CPU) rrc8Reg(a CPU8Register) {
 // It set flags depending on result.
 func (cpu *CPU) rrcHL() {
 	addr := cpu.read16Reg(REG_HL)
-	val := memory.read(addr)
+	val := cpu.bus.read(addr)
 	carry := val & 1
 	rotation := val>>1 | (carry << 7)
-	memory.write(addr, rotation)
+	cpu.bus.write(addr, rotation)
 
 	cpu.setC(carry == 1)
 	cpu.setH(false)

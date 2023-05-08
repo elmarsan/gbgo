@@ -33,8 +33,9 @@ const (
 	IE_REG uint16 = 0xffff
 )
 
-// Memory represents gb memory.
-type Memory struct {
+// MemoryBus represents Gameboy memory bus for r/w different memory banks.
+type MemoryBus struct {
+	// ram represents working ram.
 	ram [0x2000]uint8
 
 	// wram represents working ram.
@@ -49,78 +50,90 @@ type Memory struct {
 	// oam represents object attribute memory.
 	oam [0x100]uint8
 
-	// io represents hardware register
+	// io represents hardware register.
 	io [0x80]uint8
 
-	// ie represents interrupt enable register
+	// ie represents interrupt enable register.
 	ie uint8
+
+	// cartridge represents the external piece of hardware that contains game data.
+	cartridge *Cartridge
+
+	// joypad represents physycal buttons of Gameboy.
+	joypad *Joypad
 }
 
-func (m *Memory) init() {
+// NewMemoryBus creates and returns a new MemoryBus instance.
+// Some values are set to defaults of DMG boot sequence.
+func NewMemoryBus(cartridge *Cartridge, joypad *Joypad) *MemoryBus {
+	bus := &MemoryBus{
+		cartridge: cartridge,
+		joypad:    joypad,
+	}
+
 	// Timer
-	m.io[TIMA-IO_START] = 0xab
-	m.write(TIMA, 0x00)
-	m.write(TMA, 0x00)
-	m.write(TAC, 0xf8)
+	bus.io[TIMA-IO_START] = 0xab
+	bus.write(TIMA, 0x00)
+	bus.write(TMA, 0x00)
+	bus.write(TAC, 0xf8)
 
 	// Interrupt
-	m.write(IF, 0xe1)
-	m.write(IE, 0x00)
+	bus.write(IF, 0xe1)
+	bus.write(IE, 0x00)
 
 	// PPU
-	m.write(LCDC, 0x91)
-	m.write(STAT, 0x81)
-	m.write(SCX, 0)
-	m.write(SCY, 0)
-	m.write(WX, 0)
-	m.write(WY, 0)
-	m.write(LY, 0x91)
-	m.write(BGP, 0xfc)
-
-	// DMA
-	m.write(0xff46, 0xff)
+	bus.write(LCDC, 0x91)
+	bus.write(STAT, 0x81)
+	bus.write(SCX, 0)
+	bus.write(SCY, 0)
+	bus.write(WX, 0)
+	bus.write(WY, 0)
+	bus.write(LY, 0x91)
+	bus.write(BGP, 0xfc)
 
 	// JOYPAD
-	m.write(JOYP, 0xff)
+	bus.write(JOYP, 0xff)
+
+	return bus
 }
 
 // read reads from memory address.
-func (m *Memory) read(addr uint16) uint8 {
+func (bus *MemoryBus) read(addr uint16) uint8 {
 	switch {
 	case addr <= CARTRIDGE_END:
-		return cartridge.read(addr)
+		return bus.cartridge.read(addr)
 
 	case addr <= VRAM_END:
-		return m.vram[addr-VRAM_START]
+		return bus.vram[addr-VRAM_START]
 
 	case addr <= RAM_END:
-		return m.ram[addr-RAM_START]
+		return bus.ram[addr-RAM_START]
 
 	case addr <= WRAM_END:
-		return m.wram[addr-WRAM_START]
+		return bus.wram[addr-WRAM_START]
 
 		// prohibited area
 	case addr <= ECHO_END:
 		return 0
 
 	case addr <= OAM_END:
-		return m.oam[addr-OAM_START]
+		return bus.oam[addr-OAM_START]
 
 	case addr <= 0xfeff:
 		return 0
 
 	case addr <= IO_END:
 		if addr == JOYP {
-			return joypad.Get()
+			return bus.joypad.Get()
 		}
 
-		return m.io[addr-IO_START]
+		return bus.io[addr-IO_START]
 
 	case addr <= HRAM_END:
-		return m.hram[addr-HRAM_START]
+		return bus.hram[addr-HRAM_START]
 
 	case addr == IE_REG:
-		return m.ie
+		return bus.ie
 
 	default:
 		fmt.Printf("Invalid memory address 0%x", addr)
@@ -130,21 +143,21 @@ func (m *Memory) read(addr uint16) uint8 {
 }
 
 // write writes value into memory address.
-func (m *Memory) write(addr uint16, val uint8) {
+func (bus *MemoryBus) write(addr uint16, val uint8) {
 	switch {
 	case addr <= CARTRIDGE_END:
 		return
 
 	case addr <= VRAM_END:
-		m.vram[addr-VRAM_START] = val
+		bus.vram[addr-VRAM_START] = val
 		break
 
 	case addr <= RAM_END:
-		m.ram[addr-RAM_START] = val
+		bus.ram[addr-RAM_START] = val
 		break
 
 	case addr <= WRAM_END:
-		m.wram[addr-WRAM_START] = val
+		bus.wram[addr-WRAM_START] = val
 		break
 
 		// prohibited area
@@ -152,37 +165,37 @@ func (m *Memory) write(addr uint16, val uint8) {
 		break
 
 	case addr <= OAM_END:
-		m.oam[addr-OAM_START] = val
+		bus.oam[addr-OAM_START] = val
 		break
 
 	case addr <= 0xfeff:
 		break
 
 	case addr == DIV:
-		m.io[addr-IO_START] = 0
+		bus.io[addr-IO_START] = 0
 		break
 
 	// DMA transfer
 	case addr == 0xff46:
-		m.dmaTransfer(val)
-		memory.io[addr-IO_START] = val
+		bus.dmaTransfer(val)
+		bus.io[addr-IO_START] = val
 		break
 
 	case addr <= IO_END:
 		if addr == JOYP {
-			joypad.Set(val)
+			bus.joypad.Set(val)
 		} else {
-			m.io[addr-IO_START] = val
+			bus.io[addr-IO_START] = val
 		}
 
 		break
 
 	case addr <= HRAM_END:
-		m.hram[addr-HRAM_START] = val
+		bus.hram[addr-HRAM_START] = val
 		break
 
 	case addr == IE_REG:
-		m.ie = val
+		bus.ie = val
 		break
 
 	default:
@@ -192,10 +205,10 @@ func (m *Memory) write(addr uint16, val uint8) {
 }
 
 // dmaTransfer performs dma transfer
-func (m *Memory) dmaTransfer(val uint8) {
+func (bus *MemoryBus) dmaTransfer(val uint8) {
 	addr := uint16(val) * 0x100
 
 	for i := uint16(0); i < 0xa0; i++ {
-		m.write(OAM_START+i, m.read(addr+i))
+		bus.write(OAM_START+i, bus.read(addr+i))
 	}
 }

@@ -18,14 +18,14 @@ type App struct {
 func NewApp() *App {
 	return &App{
 		keyHandler: map[ebiten.Key]func(pressed bool){
-			ebiten.KeyW: func(pressed bool) { joypad.Up = pressed },
-			ebiten.KeyS: func(pressed bool) { joypad.Down = pressed },
-			ebiten.KeyA: func(pressed bool) { joypad.Left = pressed },
-			ebiten.KeyD: func(pressed bool) { joypad.Right = pressed },
-			ebiten.KeyK: func(pressed bool) { joypad.A = pressed },
-			ebiten.KeyL: func(pressed bool) { joypad.B = pressed },
-			ebiten.KeyI: func(pressed bool) { joypad.Start = pressed },
-			ebiten.KeyO: func(pressed bool) { joypad.Select = pressed },
+			ebiten.KeyW: func(pressed bool) { gb.joypad.Up = pressed },
+			ebiten.KeyS: func(pressed bool) { gb.joypad.Down = pressed },
+			ebiten.KeyA: func(pressed bool) { gb.joypad.Left = pressed },
+			ebiten.KeyD: func(pressed bool) { gb.joypad.Right = pressed },
+			ebiten.KeyK: func(pressed bool) { gb.joypad.A = pressed },
+			ebiten.KeyL: func(pressed bool) { gb.joypad.B = pressed },
+			ebiten.KeyI: func(pressed bool) { gb.joypad.Start = pressed },
+			ebiten.KeyO: func(pressed bool) { gb.joypad.Select = pressed },
 		},
 	}
 }
@@ -46,7 +46,7 @@ func (a *App) Update() error {
 }
 
 func (a *App) Draw(screen *ebiten.Image) {
-	imgRGBA := a.createImgRGBA(ppu.videoBuf[:])
+	imgRGBA := a.createImgRGBA(gb.ppu.videoBuf[:])
 	img := ebiten.NewImageFromImage(imgRGBA)
 
 	drawopts := &ebiten.DrawImageOptions{}

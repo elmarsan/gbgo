@@ -1,52 +1,36 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 )
 
-var (
-	gameboy   = &Gameboy{}
-	memory    = &Memory{}
-	cpu       = &CPU{}
-	ppu       = NewPPU()
-	cartridge = &Cartridge{}
-	timer     = &Timer{}
-	app       = &App{}
-	joypad    = &Joypad{}
-)
+// Create a new Gameboy instance
+var gb = NewGameboy()
 
 func main() {
+	// debug stuff
 	debug.init()
 
 	args := os.Args
-
 	if len(args) != 2 {
-		fmt.Println("Missing rom arg")
-		os.Exit(1)
+		log.Fatal("Missing rom arg")
 	}
 
 	rom := args[1]
-	err := gameboy.LoadRom(rom)
+	err := gb.LoadRom(rom)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	cpu.init()
-	memory.init()
-
 	go func() {
-		for {
-			gameboy.Run()
-		}
+		gb.Run()
 	}()
 
 	app := NewApp()
 
-	for {
-		if err := app.Run(); err != nil {
-			log.Fatal(err)
-		}
+	if err := app.Run(); err != nil {
+		log.Fatal(err)
+		gb.Stop()
 	}
 }

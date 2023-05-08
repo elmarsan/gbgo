@@ -1,6 +1,6 @@
 package main
 
-// Joypad represents game boy input controller.
+// Joypad represents Gameboy input controller.
 // It holds which keys are down/up.
 type Joypad struct {
 	Start  bool

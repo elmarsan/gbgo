@@ -20,35 +20,36 @@ const (
 // Bit 4: Joypad Interrupt Request (INT $60)
 var isrHandler = map[uint8]func(){
 	IT_VBLANK: func() {
-		ifFlag := memory.read(IF)
-		memory.write(IF, clearBit(ifFlag, IT_VBLANK))
-		cpu.call(0x0040)
+		ifFlag := gb.bus.read(IF)
+		gb.bus.write(IF, clearBit(ifFlag, IT_VBLANK))
+		gb.cpu.call(0x0040)
 	},
 	IT_LCD_STAT: func() {
-		ifFlag := memory.read(IF)
-		memory.write(IF, clearBit(ifFlag, IT_LCD_STAT))
-		cpu.call(0x0048)
+		ifFlag := gb.bus.read(IF)
+		gb.bus.write(IF, clearBit(ifFlag, IT_LCD_STAT))
+		gb.cpu.call(0x0048)
 	},
 	IT_TIMER: func() {
-		ifFlag := memory.read(IF)
-		memory.write(IF, clearBit(ifFlag, IT_TIMER))
-		cpu.call(0x0050)
+		ifFlag := gb.bus.read(IF)
+		gb.bus.write(IF, clearBit(ifFlag, IT_TIMER))
+		gb.cpu.call(0x0050)
 	},
 	IT_SERIAL: func() {
-		ifFlag := memory.read(IF)
-		memory.write(IF, clearBit(ifFlag, IT_SERIAL))
-		cpu.call(0x0058)
+		ifFlag := gb.bus.read(IF)
+		gb.bus.write(IF, clearBit(ifFlag, IT_SERIAL))
+		gb.cpu.call(0x0058)
 	},
 	IT_JOYPAD: func() {
-		ifFlag := memory.read(IF)
-		memory.write(IF, clearBit(ifFlag, IT_JOYPAD))
-		cpu.call(0x0060)
+		ifFlag := gb.bus.read(IF)
+		gb.bus.write(IF, clearBit(ifFlag, IT_JOYPAD))
+		gb.cpu.call(0x0060)
 	},
 }
 
-func (g *Gameboy) interruptPending() bool {
-	ifFlag := memory.read(IF)
-	ieFlag := memory.read(IE)
+// interruptPending checks whether some interrupt is pending or not.
+func (gb *Gameboy) interruptPending() bool {
+	ifFlag := gb.bus.read(IF)
+	ieFlag := gb.bus.read(IE)
 
 	if ifFlag&ieFlag&0x1f > 0 {
 		return true
@@ -57,41 +58,44 @@ func (g *Gameboy) interruptPending() bool {
 	return false
 }
 
-func (g *Gameboy) executeISR() {
-	cpu.enablingIme = false
-	cpu.ime = false
+// executeISR executes interrupt service routine.
+func (gb *Gameboy) executeISR() {
+	// disable interrupts
+	gb.cpu.enablingIme = false
+	gb.cpu.ime = false
 
-	ifFlag := memory.read(IF)
+	ifFlag := gb.bus.read(IF)
 
+	// iterate over interrupt request flags in priority order and execute the corresponding interrupt service routine
 	var i uint8 = 0
 	for ; i < 5; i++ {
 		if isBitSet(ifFlag, i) {
 			isrHandler[i]()
+			gb.cpu.clockCycles += 20
 			return
 		}
 	}
-
-	cpu.ticks += 20
 }
 
-func (g *Gameboy) reqInterrupt(it int) {
-	ifFlag := memory.read(IF)
+// reqInterrupt request and interrupt by setting IF register.
+func (gb *Gameboy) reqInterrupt(it int) {
+	ifFlag := gb.bus.read(IF)
 
 	switch it {
 	case IT_VBLANK:
-		memory.write(IF, setBit(ifFlag, IT_VBLANK))
+		gb.bus.write(IF, setBit(ifFlag, IT_VBLANK))
 		break
 	case IT_LCD_STAT:
-		memory.write(IF, setBit(ifFlag, IT_LCD_STAT))
+		gb.bus.write(IF, setBit(ifFlag, IT_LCD_STAT))
 		break
 	case IT_TIMER:
-		memory.write(IF, setBit(ifFlag, IT_TIMER))
+		gb.bus.write(IF, setBit(ifFlag, IT_TIMER))
 		break
 	case IT_SERIAL:
-		memory.write(IF, setBit(ifFlag, IT_SERIAL))
+		gb.bus.write(IF, setBit(ifFlag, IT_SERIAL))
 		break
 	case IT_JOYPAD:
-		memory.write(IF, setBit(ifFlag, IT_JOYPAD))
+		gb.bus.write(IF, setBit(ifFlag, IT_JOYPAD))
 		break
 	}
 }

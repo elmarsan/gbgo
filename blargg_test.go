@@ -13,13 +13,8 @@ type blarggTest struct {
 }
 
 func (bt *blarggTest) run() error {
-	gameboy = &Gameboy{}
-
-	cpu.init()
-	memory.init()
-
 	path := fmt.Sprintf("rom/%s", bt.name)
-	err := gameboy.LoadRom(path)
+	err := gb.LoadRom(path)
 	if err != nil {
 		return err
 	}
@@ -29,36 +24,31 @@ func (bt *blarggTest) run() error {
 
 	go func() {
 		for {
-			// If pc does not have targetPc value in 30 seconds, stop and return error
+			// If pc does not have targetPc value in 30 seconds, stop and return error.
 			if time.Since(start).Seconds() > 30 {
 				msg := fmt.Sprintf("Rom %s unable to reached target pc: %04x", bt.name, bt.targetPc)
 				errChan <- errors.New(msg)
 				break
 			}
 
-			if cpu.pc == bt.targetPc {
+			if gb.cpu.pc == bt.targetPc {
 				errChan <- nil
 				break
 			}
 		}
+
+		// After timeout of success stop Gameboy loop.
+		gb.Stop()
 	}()
 
 	// goroutine that execute gameboy steps
 	// it stops when target pc or timeout is reached
 	go func() {
-		for {
-			select {
-			case <-errChan:
-				break
-			default:
-				gameboy.Run()
-			}
-		}
+		gb.Run()
 	}()
 
 	err = <-errChan
 	close(errChan)
-
 	return err
 }
 
