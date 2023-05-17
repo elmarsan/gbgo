@@ -31,16 +31,16 @@ func (d *Debug) init() {
 	d.stdOutLogger = stdOutLogger
 }
 
-func (d *Debug) logState() {
+func (d *Debug) logState(gb *Gameboy) {
 	state := fmt.Sprintf("A:%02X F:%02X B:%02X C:%02X D:%02X E:%02X H:%02X L:%02X SP:%04X PC:%04X PCMEM:%02X,%02X,%02X,%02X",
-		gb.cpu.a, gb.cpu.f, gb.cpu.b, gb.cpu.c, gb.cpu.d, gb.cpu.e, gb.cpu.h, gb.cpu.l, gb.cpu.sp, gb.cpu.pc,
-		gb.bus.read(gb.cpu.pc), gb.bus.read(gb.cpu.pc+1), gb.bus.read(gb.cpu.pc+2), gb.bus.read(gb.cpu.pc+3))
+		gb.cpu.af.Hi(), gb.cpu.af.Lo(), gb.cpu.bc.Hi(), gb.cpu.bc.Lo(), gb.cpu.de.Hi(), gb.cpu.de.Lo(), gb.cpu.hl.Hi(),
+		gb.cpu.hl.Lo(), gb.cpu.sp, gb.cpu.pc, gb.memoryBus.read(gb.cpu.pc), gb.memoryBus.read(gb.cpu.pc+1), gb.memoryBus.read(gb.cpu.pc+2), gb.memoryBus.read(gb.cpu.pc+3))
 
-	if gb.bus.read(0xff02) == 0x81 {
-		char := gb.bus.read(0xff01)
+	if gb.memoryBus.read(0xff02) == 0x81 {
+		char := gb.memoryBus.read(0xff01)
 		d.msg += string(char)
 
-		gb.bus.write(0xff02, 0)
+		gb.memoryBus.write(0xff02, 0)
 	}
 
 	if len(d.msg) > 0 {

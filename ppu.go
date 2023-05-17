@@ -25,8 +25,11 @@ type PPU struct {
 	// vblankline keeps current vblankline. (0-10)
 	vblankLine int
 
-	// bus represents memory bus used by Gameboy.
-	bus *MemoryBus
+	// memoryBus represents memory memoryBus used by Gameboy.
+	memoryBus *MemoryBus
+
+	// InterruptBus represents the interruption system of game boy.
+	interruptBus *InterruptBus
 }
 
 const (
@@ -55,7 +58,7 @@ const (
 
 // NewPPU creates and returns a new PPU instance.
 // Ppu members are set defaults of DMG boot sequence.
-func NewPPU(bus *MemoryBus) *PPU {
+func NewPPU(memoryBus *MemoryBus, irBus *InterruptBus) *PPU {
 	videoBuf := [GB_W * GB_H]uint8{}
 
 	// Set all pixels to palette index 0
@@ -70,15 +73,16 @@ func NewPPU(bus *MemoryBus) *PPU {
 		// PPU starts in VBLANK mode
 		statusMode: 1,
 		// First scanline line must be 144
-		scanline:   144,
-		vblankLine: 0,
-		bus:        bus,
+		scanline:     144,
+		vblankLine:   0,
+		memoryBus:    memoryBus,
+		interruptBus: irBus,
 	}
 }
 
 // Ticks emulates ppu ticks.
 func (ppu *PPU) Tick(clockCycles int) {
-	lcdc := ppu.bus.read(LCDC)
+	lcdc := ppu.memoryBus.read(LCDC)
 
 	if !isBitSet(lcdc, 7) {
 		return
@@ -93,21 +97,21 @@ func (ppu *PPU) Tick(clockCycles int) {
 			ppu.statusClockCycles -= 204
 			ppu.updateStatusMode(OAM_SCAN_MODE)
 			ppu.scanline++
-			ppu.bus.write(LY, ppu.scanline)
+			ppu.memoryBus.write(LY, ppu.scanline)
 			ppu.compareLY()
 
 			// Vblank mode starts
 			if ppu.scanline == 144 {
 				ppu.updateStatusMode(VBLANK_MODE)
 
-				stat := ppu.bus.read(STAT)
+				stat := ppu.memoryBus.read(STAT)
 				if isBitSet(stat, 4) {
-					gb.reqInterrupt(IT_LCD_STAT)
+					ppu.interruptBus.request(IT_LCD_STAT)
 				}
 			} else {
-				stat := ppu.bus.read(STAT)
+				stat := ppu.memoryBus.read(STAT)
 				if isBitSet(stat, 5) {
-					gb.reqInterrupt(IT_LCD_STAT)
+					ppu.interruptBus.request(IT_LCD_STAT)
 				}
 			}
 		}
@@ -121,14 +125,14 @@ func (ppu *PPU) Tick(clockCycles int) {
 
 			if ppu.vblankLine <= 9 {
 				ppu.scanline++
-				ppu.bus.write(LY, ppu.scanline)
+				ppu.memoryBus.write(LY, ppu.scanline)
 				ppu.compareLY()
 			}
 		}
 
 		if (ppu.statusClockCycles >= 4104) && (ppu.vBlankClockCycles >= 4) && (ppu.scanline == 153) {
 			ppu.scanline = 0
-			ppu.bus.write(LY, ppu.scanline)
+			ppu.memoryBus.write(LY, ppu.scanline)
 			ppu.compareLY()
 		}
 
@@ -137,9 +141,9 @@ func (ppu *PPU) Tick(clockCycles int) {
 			ppu.statusClockCycles -= 4560
 			ppu.updateStatusMode(OAM_SCAN_MODE)
 
-			stat := ppu.bus.read(STAT)
+			stat := ppu.memoryBus.read(STAT)
 			if isBitSet(stat, 5) {
-				gb.reqInterrupt(IT_LCD_STAT)
+				ppu.interruptBus.request(IT_LCD_STAT)
 			}
 		}
 
@@ -156,9 +160,9 @@ func (ppu *PPU) Tick(clockCycles int) {
 			ppu.renderScanline()
 			ppu.updateStatusMode(HBLANK_MODE)
 
-			stat := ppu.bus.read(STAT)
+			stat := ppu.memoryBus.read(STAT)
 			if isBitSet(stat, 3) {
-				gb.reqInterrupt(IT_LCD_STAT)
+				ppu.interruptBus.request(IT_LCD_STAT)
 			}
 		}
 	}
@@ -169,19 +173,19 @@ func (ppu *PPU) Tick(clockCycles int) {
 // and requests a VBLANK interrupt.
 func (ppu *PPU) updateStatusMode(mode int) {
 	ppu.statusMode = mode
-	stat := ppu.bus.read(STAT)
-	ppu.bus.write(STAT, uint8(stat&0xfc)|uint8(ppu.statusMode&0x3))
+	stat := ppu.memoryBus.read(STAT)
+	ppu.memoryBus.write(STAT, uint8(stat&0xfc)|uint8(ppu.statusMode&0x3))
 
 	if mode == VBLANK_MODE {
 		ppu.vblankLine = 0
 		ppu.vBlankClockCycles = ppu.statusClockCycles
-		gb.reqInterrupt(IT_VBLANK)
+		ppu.interruptBus.request(IT_VBLANK)
 	}
 }
 
 // renderScanline renders scanline into videobuf.
 func (ppu *PPU) renderScanline() {
-	lcdc := ppu.bus.read(LCDC)
+	lcdc := ppu.memoryBus.read(LCDC)
 
 	if isBitSet(lcdc, 0) {
 		ppu.renderTiles()
@@ -194,12 +198,12 @@ func (ppu *PPU) renderScanline() {
 
 // renderTiles render tiles into videoBuf.
 func (ppu *PPU) renderTiles() {
-	lcdc := ppu.bus.read(LCDC)
-	scx := ppu.bus.read(SCX)
-	scy := ppu.bus.read(SCY)
-	wx := int(ppu.bus.read(WX)) - 7
-	wy := ppu.bus.read(WY)
-	palette := ppu.bus.read(BGP)
+	lcdc := ppu.memoryBus.read(LCDC)
+	scx := ppu.memoryBus.read(SCX)
+	scy := ppu.memoryBus.read(SCY)
+	wx := int(ppu.memoryBus.read(WX)) - 7
+	wy := ppu.memoryBus.read(WY)
+	palette := ppu.memoryBus.read(BGP)
 
 	tileData, tileMap := ppu.getTileDataAndTileMap()
 
@@ -225,18 +229,18 @@ func (ppu *PPU) renderTiles() {
 		var tile uint8
 
 		if tileData == 0x8800 {
-			tile = uint8((int8(ppu.bus.read(tileMap + uint16(tileRow) + x))))
+			tile = uint8((int8(ppu.memoryBus.read(tileMap + uint16(tileRow) + x))))
 			tile += 128
 		} else {
-			tile = ppu.bus.read(tileMap + uint16(tileRow) + x)
+			tile = ppu.memoryBus.read(tileMap + uint16(tileRow) + x)
 		}
 
 		mapOffsetX := x * 8
 		tile16 := uint16(tile) * 16
 		tileAddress := tileData + tile16 + uint16(line)
 
-		b1 := ppu.bus.read(tileAddress)
-		b2 := ppu.bus.read(tileAddress + 1)
+		b1 := ppu.memoryBus.read(tileAddress)
+		b2 := ppu.memoryBus.read(tileAddress + 1)
 
 		for bit := uint8(0); bit < 8; bit++ {
 			var pixel uint8
@@ -269,7 +273,7 @@ func (ppu *PPU) renderTiles() {
 
 // getTileDataAndTileMap returns vram tile data and vram tile map based on LCDC.
 func (ppu *PPU) getTileDataAndTileMap() (uint16, uint16) {
-	lcdc := ppu.bus.read(LCDC)
+	lcdc := ppu.memoryBus.read(LCDC)
 
 	var (
 		data uint16 = 0x8800
@@ -290,9 +294,9 @@ func (ppu *PPU) getTileDataAndTileMap() (uint16, uint16) {
 // renderSprites render sprites into videoBuf.
 func (ppu *PPU) renderSprites() {
 	var (
-		lcdc     = ppu.bus.read(LCDC)
-		palette0 = ppu.bus.read(OBP0)
-		palette1 = ppu.bus.read(OBP1)
+		lcdc     = ppu.memoryBus.read(LCDC)
+		palette0 = ppu.memoryBus.read(OBP0)
+		palette1 = ppu.memoryBus.read(OBP1)
 	)
 
 	// Get sprite height
@@ -304,14 +308,14 @@ func (ppu *PPU) renderSprites() {
 	for sprite := uint16(0); sprite < 40; sprite++ {
 		index := sprite * 4
 
-		yPos := int32(ppu.bus.read(uint16(0xFE00+index))) - 16
+		yPos := int32(ppu.memoryBus.read(uint16(0xFE00+index))) - 16
 		if int32(ppu.scanline) < yPos || int32(ppu.scanline) >= (yPos+ySize) {
 			continue
 		}
 
-		xPos := int32(ppu.bus.read(uint16(0xFE00+index+1))) - 8
-		tileData := ppu.bus.read(uint16(0xFE00 + index + 2))
-		flags := ppu.bus.read(uint16(0xFE00 + index + 3))
+		xPos := int32(ppu.memoryBus.read(uint16(0xFE00+index+1))) - 8
+		tileData := ppu.memoryBus.read(uint16(0xFE00 + index + 2))
+		flags := ppu.memoryBus.read(uint16(0xFE00 + index + 3))
 
 		// Sprite flags
 		// TODO: check xFlip and priority
@@ -324,8 +328,8 @@ func (ppu *PPU) renderSprites() {
 		}
 
 		spriteAddr := (uint16(tileData) * 16) + uint16(line*2)
-		b1 := ppu.bus.read(spriteAddr)
-		b2 := ppu.bus.read(spriteAddr + 1)
+		b1 := ppu.memoryBus.read(spriteAddr)
+		b2 := ppu.memoryBus.read(spriteAddr + 1)
 
 		for tilePixel := uint8(0); tilePixel < 8; tilePixel++ {
 			pixel := int16(xPos) + int16(7-tilePixel)
@@ -361,16 +365,16 @@ func (ppu *PPU) renderSprites() {
 
 // compareLY compares LY and LYC
 func (ppu *PPU) compareLY() {
-	lyc := ppu.bus.read(LYC)
-	status := ppu.bus.read(STAT)
+	lyc := ppu.memoryBus.read(LYC)
+	status := ppu.memoryBus.read(STAT)
 
 	if ppu.scanline == lyc {
-		ppu.bus.write(STAT, setBit(status, 2))
+		ppu.memoryBus.write(STAT, setBit(status, 2))
 
-		if isBitSet(ppu.bus.read(STAT), 6) {
-			gb.reqInterrupt(IT_LCD_STAT)
+		if isBitSet(ppu.memoryBus.read(STAT), 6) {
+			ppu.interruptBus.request(IT_LCD_STAT)
 		}
 	} else {
-		ppu.bus.write(STAT, clearBit(status, 2))
+		ppu.memoryBus.write(STAT, clearBit(status, 2))
 	}
 }

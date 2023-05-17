@@ -1,10 +1,5 @@
 package main
 
-// Timer represents the timer hardware in the Game Boy console.
-type Timer struct {
-	clockCycles uint
-}
-
 const (
 	// Divider register
 	DIV = 0xff04
@@ -18,6 +13,25 @@ const (
 	// Timer control
 	TAC = 0xff07
 )
+
+// Timer represents the timer hardware in the Game Boy console.
+type Timer struct {
+	clockCycles uint
+
+	// memoryBus represents memory memoryBus used by Gameboy.
+	memoryBus *MemoryBus
+
+	// InterruptBus represents the interruption system of game boy.
+	interruptBus *InterruptBus
+}
+
+// NewTimer returns new instance of Game boy timer.
+func NewTimer(memoryBus *MemoryBus, irBus *InterruptBus) *Timer {
+	return &Timer{
+		memoryBus:    memoryBus,
+		interruptBus: irBus,
+	}
+}
 
 // Tick updates the timer with the given number of clock cycles.
 func (t *Timer) Tick(clockCycles int) {
@@ -39,43 +53,43 @@ func (t *Timer) Tick(clockCycles int) {
 
 // incDiv increments the divider register based on the given number of cycles.
 func (t *Timer) incDiv(cycles int) {
-	div := gb.bus.read(DIV)
+	div := t.memoryBus.read(DIV)
 	inc := int(div) + cycles
 
 	if inc > 0xff {
-		gb.bus.io[DIV-IO_START] = 1
+		t.memoryBus.io[DIV-IO_START] = 1
 	} else {
-		gb.bus.io[DIV-IO_START] = uint8(inc)
+		t.memoryBus.io[DIV-IO_START] = uint8(inc)
 	}
 }
 
 // incTIMA increments the timer counter and handles overflow.
 func (t *Timer) incTIMA() {
-	inc := uint16(gb.bus.read(TIMA)) + 1
+	inc := uint16(t.memoryBus.read(TIMA)) + 1
 
 	if inc > 0xff {
-		gb.reqInterrupt(IT_TIMER)
-		tma := gb.bus.read(TMA)
-		gb.bus.write(TIMA, tma)
+		t.interruptBus.request(IT_TIMER)
+		tma := t.memoryBus.read(TMA)
+		t.memoryBus.write(TIMA, tma)
 	} else {
-		gb.bus.write(TIMA, uint8(inc))
+		t.memoryBus.write(TIMA, uint8(inc))
 	}
 }
 
 // resetDIV resets the divider register to 0.
 func (t *Timer) resetDIV() {
-	gb.bus.write(DIV, 0)
+	t.memoryBus.write(DIV, 0)
 }
 
 // tacEnabled returns whether the timer is enabled.
 func (t *Timer) tacEnabled() bool {
-	tac := gb.bus.read(TAC)
+	tac := t.memoryBus.read(TAC)
 	return isBitSet(tac, 2)
 }
 
 // clockFreq returns the clock frequency of the timer.
 func (t *Timer) clockFreq() int {
-	tac := gb.bus.read(TAC)
+	tac := t.memoryBus.read(TAC)
 
 	clock := tac & 0x03
 	switch clock {

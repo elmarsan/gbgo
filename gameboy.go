@@ -15,8 +15,8 @@ type Gameboy struct {
 	// cpu represents the central processing unit used by Gameboy.
 	cpu *CPU
 
-	// bus represents memory bus used by Gameboy.
-	bus *MemoryBus
+	// memoryBus represents memory memoryBus used by Gameboy.
+	memoryBus *MemoryBus
 
 	// ppu represents pixel processing unit user by Gameboy.
 	ppu *PPU
@@ -29,6 +29,9 @@ type Gameboy struct {
 
 	// joypad represents physycal buttons of Gameboy.
 	joypad *Joypad
+
+	// InterruptBus represents the interruption system of game boy.
+	interruptBus *InterruptBus
 }
 
 // NewGameboy creates and returns a new Gameboy instance.
@@ -36,20 +39,24 @@ func NewGameboy() *Gameboy {
 	cartridge := &Cartridge{}
 	joypad := &Joypad{}
 
-	bus := NewMemoryBus(cartridge, joypad)
+	memoryBus := NewMemoryBus(cartridge, joypad)
+	interruptBus := NewInterruptBus(memoryBus)
 
-	cpu := NewCPU(bus)
-	ppu := NewPPU(bus)
+	cpu := NewCPU(memoryBus)
+	ppu := NewPPU(memoryBus, interruptBus)
+
+	timer := NewTimer(memoryBus, interruptBus)
 
 	return &Gameboy{
-		paused:    false,
-		stopCh:    make(chan struct{}),
-		cpu:       cpu,
-		bus:       bus,
-		ppu:       ppu,
-		timer:     &Timer{},
-		cartridge: cartridge,
-		joypad:    joypad,
+		paused:       false,
+		stopCh:       make(chan struct{}),
+		cpu:          cpu,
+		memoryBus:    memoryBus,
+		ppu:          ppu,
+		timer:        timer,
+		cartridge:    cartridge,
+		joypad:       joypad,
+		interruptBus: interruptBus,
 	}
 }
 
@@ -81,28 +88,45 @@ func (gb *Gameboy) Stop() {
 // and handles interrupts
 func (gb *Gameboy) step() {
 	if !gb.cpu.halted {
-		gb.cpu.execute()
+		gb.execute()
 	} else {
-		if gb.interruptPending() {
-			gb.cpu.halted = false
+		if gb.interruptBus.pending() {
 		} else {
 			gb.cpu.clockCycles += 4
 		}
 	}
 
-	if gb.cpu.ime {
-		if gb.interruptPending() {
-			gb.executeISR()
-		}
+	if gb.interruptBus.ime && gb.interruptBus.pending() {
+		call(gb, gb.interruptBus.locateISR())
+		gb.cpu.clockCycles += ISRClockCycles
 	}
 
-	if gb.cpu.enablingIme {
-		gb.cpu.ime = true
-		gb.cpu.enablingIme = false
+	if gb.interruptBus.enablingIme {
+		gb.interruptBus.ime = true
+		gb.interruptBus.enablingIme = false
 	}
 
 	gb.ppu.Tick(gb.cpu.clockCycles)
 	gb.timer.Tick(gb.cpu.clockCycles)
+}
+
+// execute fetchs next opcode and executes the corresponding instruction.
+func (gb *Gameboy) execute() {
+	debug.logState(gb)
+
+	gb.cpu.clockCycles = 0
+	pc := gb.cpu.readPc()
+	opcode := gb.memoryBus.read(pc)
+
+	if opcode == 0xcb {
+		pc := gb.cpu.readPc()
+		opcode := gb.memoryBus.read(pc)
+		prefixedInstructions[opcode](gb)
+		gb.cpu.clockCycles += cbInstructionCycles[opcode] * 4
+	} else {
+		instructions[opcode](gb)
+		gb.cpu.clockCycles += instructionCycles[opcode] * 4
+	}
 }
 
 // LoadRom loads a ROM file into the Gameboy's cartridge and returns an error if

@@ -11,45 +11,66 @@ const (
 	IF = 0xff0f
 	// Interrupt enable
 	IE = 0xffff
+
+	ISRClockCycles = 20
 )
+
+// InterruptBus represents the interruption system of game boy.
+type InterruptBus struct {
+	// bus represents memory bus used by Gameboy.
+	memoryBus *MemoryBus
+
+	// ime keeps a bool indicating whether interrupts are enabled or not.
+	ime bool
+
+	// enablingIme is set as previous step before enable/disable IME.
+	enablingIme bool
+}
+
+// NewInterruptBus returns new instance of InterruptBus.
+func NewInterruptBus(bus *MemoryBus) *InterruptBus {
+	return &InterruptBus{
+		memoryBus: bus,
+	}
+}
 
 // Bit 0: VBlank Interrupt Request (INT $40)
 // Bit 1: LCD STAT Interrupt Enable (INT $48)
 // Bit 2: Timer Interrupt Request (INT $50)
 // Bit 3: Serial Interrupt Request (INT $58)
 // Bit 4: Joypad Interrupt Request (INT $60)
-var isrHandler = map[uint8]func(){
-	IT_VBLANK: func() {
-		ifFlag := gb.bus.read(IF)
-		gb.bus.write(IF, clearBit(ifFlag, IT_VBLANK))
-		gb.cpu.call(0x0040)
+var isrHandler = map[uint8]func(ib *InterruptBus) uint16{
+	IT_VBLANK: func(ib *InterruptBus) uint16 {
+		ifFlag := ib.memoryBus.read(IF)
+		ib.memoryBus.write(IF, clearBit(ifFlag, IT_VBLANK))
+		return 0x0040
 	},
-	IT_LCD_STAT: func() {
-		ifFlag := gb.bus.read(IF)
-		gb.bus.write(IF, clearBit(ifFlag, IT_LCD_STAT))
-		gb.cpu.call(0x0048)
+	IT_LCD_STAT: func(ib *InterruptBus) uint16 {
+		ifFlag := ib.memoryBus.read(IF)
+		ib.memoryBus.write(IF, clearBit(ifFlag, IT_LCD_STAT))
+		return 0x0048
 	},
-	IT_TIMER: func() {
-		ifFlag := gb.bus.read(IF)
-		gb.bus.write(IF, clearBit(ifFlag, IT_TIMER))
-		gb.cpu.call(0x0050)
+	IT_TIMER: func(ib *InterruptBus) uint16 {
+		ifFlag := ib.memoryBus.read(IF)
+		ib.memoryBus.write(IF, clearBit(ifFlag, IT_TIMER))
+		return 0x0050
 	},
-	IT_SERIAL: func() {
-		ifFlag := gb.bus.read(IF)
-		gb.bus.write(IF, clearBit(ifFlag, IT_SERIAL))
-		gb.cpu.call(0x0058)
+	IT_SERIAL: func(ib *InterruptBus) uint16 {
+		ifFlag := ib.memoryBus.read(IF)
+		ib.memoryBus.write(IF, clearBit(ifFlag, IT_SERIAL))
+		return 0x0058
 	},
-	IT_JOYPAD: func() {
-		ifFlag := gb.bus.read(IF)
-		gb.bus.write(IF, clearBit(ifFlag, IT_JOYPAD))
-		gb.cpu.call(0x0060)
+	IT_JOYPAD: func(ib *InterruptBus) uint16 {
+		ifFlag := ib.memoryBus.read(IF)
+		ib.memoryBus.write(IF, clearBit(ifFlag, IT_JOYPAD))
+		return 0x0060
 	},
 }
 
-// interruptPending checks whether some interrupt is pending or not.
-func (gb *Gameboy) interruptPending() bool {
-	ifFlag := gb.bus.read(IF)
-	ieFlag := gb.bus.read(IE)
+// pending checks whether some interrupt is pending or not.
+func (ib *InterruptBus) pending() bool {
+	ifFlag := ib.memoryBus.read(IF)
+	ieFlag := ib.memoryBus.read(IE)
 
 	if ifFlag&ieFlag&0x1f > 0 {
 		return true
@@ -58,44 +79,44 @@ func (gb *Gameboy) interruptPending() bool {
 	return false
 }
 
-// executeISR executes interrupt service routine.
-func (gb *Gameboy) executeISR() {
+// locateISR returns the isr address in case some interrupt is pending.
+func (ib *InterruptBus) locateISR() uint16 {
 	// disable interrupts
-	gb.cpu.enablingIme = false
-	gb.cpu.ime = false
+	ib.enablingIme = false
+	ib.ime = false
 
-	ifFlag := gb.bus.read(IF)
+	ifFlag := ib.memoryBus.read(IF)
 
-	// iterate over interrupt request flags in priority order and execute the corresponding interrupt service routine
+	// iterate over interrupt request flags in priority order and obtain interrupt service routine address
 	var i uint8 = 0
 	for ; i < 5; i++ {
 		if isBitSet(ifFlag, i) {
-			isrHandler[i]()
-			gb.cpu.clockCycles += 20
-			return
+			return isrHandler[i](ib)
 		}
 	}
+
+	return 0
 }
 
-// reqInterrupt request and interrupt by setting IF register.
-func (gb *Gameboy) reqInterrupt(it int) {
-	ifFlag := gb.bus.read(IF)
+// request requests an interrupt by setting IF register.
+func (ib *InterruptBus) request(it int) {
+	ifFlag := ib.memoryBus.read(IF)
 
 	switch it {
 	case IT_VBLANK:
-		gb.bus.write(IF, setBit(ifFlag, IT_VBLANK))
+		ib.memoryBus.write(IF, setBit(ifFlag, IT_VBLANK))
 		break
 	case IT_LCD_STAT:
-		gb.bus.write(IF, setBit(ifFlag, IT_LCD_STAT))
+		ib.memoryBus.write(IF, setBit(ifFlag, IT_LCD_STAT))
 		break
 	case IT_TIMER:
-		gb.bus.write(IF, setBit(ifFlag, IT_TIMER))
+		ib.memoryBus.write(IF, setBit(ifFlag, IT_TIMER))
 		break
 	case IT_SERIAL:
-		gb.bus.write(IF, setBit(ifFlag, IT_SERIAL))
+		ib.memoryBus.write(IF, setBit(ifFlag, IT_SERIAL))
 		break
 	case IT_JOYPAD:
-		gb.bus.write(IF, setBit(ifFlag, IT_JOYPAD))
+		ib.memoryBus.write(IF, setBit(ifFlag, IT_JOYPAD))
 		break
 	}
 }

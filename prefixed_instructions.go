@@ -19,1088 +19,1078 @@ var cbInstructionCycles = []int{
 	2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2,
 }
 
-var prefixedInstructions = [0x100]func(){
-	0x00: func() {
+var prefixedInstructions = [0x100]func(gb *Gameboy){
+	0x00: func(gb *Gameboy) {
 		// RLC B
-		gb.cpu.rlc8Reg(REG_B)
+		rlc(gb, gb.cpu.bc.Hi())
 	},
-	0x01: func() {
+	0x01: func(gb *Gameboy) {
 		// RLC C
-		gb.cpu.rlc8Reg(REG_C)
+		rlc(gb, gb.cpu.bc.Lo())
 	},
-	0x02: func() {
+	0x02: func(gb *Gameboy) {
 		// RLC D
-		gb.cpu.rlc8Reg(REG_D)
+		rlc(gb, gb.cpu.de.Hi())
 	},
-	0x03: func() {
+	0x03: func(gb *Gameboy) {
 		// RLC E
-		gb.cpu.rlc8Reg(REG_E)
+		rlc(gb, gb.cpu.de.Lo())
 	},
-	0x04: func() {
+	0x04: func(gb *Gameboy) {
 		// RLC H
-		gb.cpu.rlc8Reg(REG_H)
+		rlc(gb, gb.cpu.hl.Hi())
 	},
-	0x05: func() {
+	0x05: func(gb *Gameboy) {
 		// RLC L
-		gb.cpu.rlc8Reg(REG_L)
+		rlc(gb, gb.cpu.hl.Lo())
 	},
-	0x06: func() {
+	0x06: func(gb *Gameboy) {
 		// RLC (HL)
-		gb.cpu.rlcHL()
+		rlc(gb, gb.memoryBus.read(gb.cpu.hl.val))
 	},
-	0x07: func() {
+	0x07: func(gb *Gameboy) {
 		// RLC A
-		gb.cpu.rlc8Reg(REG_A)
+		rlc(gb, gb.cpu.af.Hi())
 	},
-	0x08: func() {
+	0x08: func(gb *Gameboy) {
 		// RRC B
-		gb.cpu.rrc8Reg(REG_B)
+		rrc(gb, gb.cpu.bc.Hi())
 	},
-	0x09: func() {
+	0x09: func(gb *Gameboy) {
 		// RRC C
-		gb.cpu.rrc8Reg(REG_C)
+		rrc(gb, gb.cpu.bc.Lo())
 	},
-	0x0a: func() {
+	0x0a: func(gb *Gameboy) {
 		// RRC D
-		gb.cpu.rrc8Reg(REG_D)
+		rrc(gb, gb.cpu.de.Hi())
 	},
-	0x0b: func() {
+	0x0b: func(gb *Gameboy) {
 		// RRC E
-		gb.cpu.rrc8Reg(REG_E)
+		rrc(gb, gb.cpu.de.Lo())
 	},
-	0x0c: func() {
+	0x0c: func(gb *Gameboy) {
 		// RRC H
-		gb.cpu.rrc8Reg(REG_H)
+		rrc(gb, gb.cpu.hl.Hi())
 	},
-	0x0d: func() {
+	0x0d: func(gb *Gameboy) {
 		// RRC L
-		gb.cpu.rrc8Reg(REG_L)
+		rrc(gb, gb.cpu.hl.Lo())
 	},
-	0x0e: func() {
+	0x0e: func(gb *Gameboy) {
 		// RRC (HL)
-		gb.cpu.rrcHL()
+		rrc(gb, gb.memoryBus.read(gb.cpu.hl.val))
 	},
-	0x0f: func() {
+	0x0f: func(gb *Gameboy) {
 		// RRC A
-		gb.cpu.rrc8Reg(REG_A)
+		rrc(gb, gb.cpu.af.Hi())
 	},
-
-	0x10: func() {
+	0x10: func(gb *Gameboy) {
 		// RL B
-		gb.cpu.rl8Reg(REG_B)
+		rot := rl(gb, gb.cpu.bc.Hi())
+		gb.cpu.bc.SetHi(rot)
 	},
-	0x11: func() {
+	0x11: func(gb *Gameboy) {
 		// RL C
-		gb.cpu.rl8Reg(REG_C)
+		rot := rl(gb, gb.cpu.bc.Lo())
+		gb.cpu.bc.SetLo(rot)
 	},
-	0x12: func() {
+	0x12: func(gb *Gameboy) {
 		// RL D
-		gb.cpu.rl8Reg(REG_D)
+		rot := rl(gb, gb.cpu.de.Hi())
+		gb.cpu.de.SetHi(rot)
 	},
-	0x13: func() {
+	0x13: func(gb *Gameboy) {
 		// RL E
-		gb.cpu.rl8Reg(REG_E)
+		rot := rl(gb, gb.cpu.de.Lo())
+		gb.cpu.de.SetLo(rot)
 	},
-	0x14: func() {
+	0x14: func(gb *Gameboy) {
 		// RL H
-		gb.cpu.rl8Reg(REG_H)
+		rot := rl(gb, gb.cpu.hl.Hi())
+		gb.cpu.hl.SetHi(rot)
 	},
-	0x15: func() {
+	0x15: func(gb *Gameboy) {
 		// RL L
-		gb.cpu.rl8Reg(REG_L)
+		rot := rl(gb, gb.cpu.hl.Lo())
+		gb.cpu.hl.SetLo(rot)
 	},
-	0x16: func() {
+	0x16: func(gb *Gameboy) {
 		// RL (HL)
-		gb.cpu.rlHL()
+		addr := gb.cpu.hl.val
+		rot := rl(gb, gb.memoryBus.read(addr))
+		gb.memoryBus.write(addr, rot)
 	},
-	0x17: func() {
+	0x17: func(gb *Gameboy) {
 		// RL A
-		gb.cpu.rl8Reg(REG_A)
+		rot := rl(gb, gb.cpu.af.Hi())
+		gb.cpu.af.SetHi(rot)
 	},
-	0x18: func() {
+	0x18: func(gb *Gameboy) {
 		// RR B
-		gb.cpu.rr8Reg(REG_B)
 	},
-	0x19: func() {
+	0x19: func(gb *Gameboy) {
 		// RR C
-		gb.cpu.rr8Reg(REG_C)
+		rr(gb, gb.cpu.bc.Lo())
 	},
-	0x1a: func() {
+	0x1a: func(gb *Gameboy) {
 		// RR D
-		gb.cpu.rr8Reg(REG_D)
+		rr(gb, gb.cpu.de.Hi())
 	},
-	0x1b: func() {
+	0x1b: func(gb *Gameboy) {
 		// RR E
-		gb.cpu.rr8Reg(REG_E)
+		rr(gb, gb.cpu.de.Lo())
 	},
-	0x1c: func() {
+	0x1c: func(gb *Gameboy) {
 		// RR H
-		gb.cpu.rr8Reg(REG_H)
+		rr(gb, gb.cpu.hl.Hi())
 	},
-	0x1d: func() {
+	0x1d: func(gb *Gameboy) {
 		// RR L
-		gb.cpu.rr8Reg(REG_L)
+		rr(gb, gb.cpu.hl.Lo())
 	},
-	0x1e: func() {
+	0x1e: func(gb *Gameboy) {
 		// RR (HL)
-		gb.cpu.rrHL()
+		rr(gb, gb.memoryBus.read(gb.cpu.hl.val))
 	},
-	0x1f: func() {
+	0x1f: func(gb *Gameboy) {
 		// RR A
-		gb.cpu.rr8Reg(REG_A)
+		rr(gb, gb.cpu.af.Hi())
 	},
-	0x20: func() {
+	0x20: func(gb *Gameboy) {
 		// SLA B
-		gb.cpu.sla8Reg(REG_B)
+		rot := sla(gb, gb.cpu.bc.Hi())
+		gb.cpu.bc.SetHi(rot)
 	},
-	0x21: func() {
+	0x21: func(gb *Gameboy) {
 		// SLA C
-		gb.cpu.sla8Reg(REG_C)
+		rot := sla(gb, gb.cpu.bc.Lo())
+		gb.cpu.bc.SetLo(rot)
 	},
-	0x22: func() {
+	0x22: func(gb *Gameboy) {
 		// SLA D
-		gb.cpu.sla8Reg(REG_D)
+		rot := sla(gb, gb.cpu.de.Hi())
+		gb.cpu.de.SetHi(rot)
 	},
-	0x23: func() {
+	0x23: func(gb *Gameboy) {
 		// SLA E
-		gb.cpu.sla8Reg(REG_E)
+		rot := sla(gb, gb.cpu.de.Lo())
+		gb.cpu.de.SetLo(rot)
 	},
-	0x24: func() {
+	0x24: func(gb *Gameboy) {
 		// SLA H
-		gb.cpu.sla8Reg(REG_H)
+		rot := sla(gb, gb.cpu.hl.Hi())
+		gb.cpu.hl.SetHi(rot)
 	},
-	0x25: func() {
+	0x25: func(gb *Gameboy) {
 		// SLA L
-		gb.cpu.sla8Reg(REG_L)
+		rot := sla(gb, gb.cpu.hl.Lo())
+		gb.cpu.hl.SetLo(rot)
 	},
-	0x26: func() {
+	0x26: func(gb *Gameboy) {
 		// SLA (HL)
-		gb.cpu.slaHL()
+		addr := gb.cpu.hl.val
+		rot := sla(gb, gb.memoryBus.read(addr))
+		gb.memoryBus.write(addr, rot)
 	},
-	0x27: func() {
+	0x27: func(gb *Gameboy) {
 		// SLA A
-		gb.cpu.sla8Reg(REG_A)
+		rot := sla(gb, gb.cpu.af.Hi())
+		gb.cpu.af.SetHi(rot)
 	},
-	0x28: func() {
+	0x28: func(gb *Gameboy) {
 		// SRA B
-		gb.cpu.sra8Reg(REG_B)
+		sra(gb, gb.cpu.bc.Hi())
 	},
-	0x29: func() {
+	0x29: func(gb *Gameboy) {
 		// SRA C
-		gb.cpu.sra8Reg(REG_C)
+		rot := sra(gb, gb.cpu.bc.Lo())
+		gb.cpu.bc.SetLo(rot)
 	},
-	0x2a: func() {
+	0x2a: func(gb *Gameboy) {
 		// SRA D
-		gb.cpu.sra8Reg(REG_D)
+		rot := sra(gb, gb.cpu.de.Hi())
+		gb.cpu.de.SetHi(rot)
 	},
-	0x2b: func() {
+	0x2b: func(gb *Gameboy) {
 		// SRA E
-		gb.cpu.sra8Reg(REG_E)
+		rot := sra(gb, gb.cpu.de.Lo())
+		gb.cpu.de.SetLo(rot)
 	},
-	0x2c: func() {
+	0x2c: func(gb *Gameboy) {
 		// SRA H
-		gb.cpu.sra8Reg(REG_H)
+		rot := sra(gb, gb.cpu.hl.Hi())
+		gb.cpu.hl.SetHi(rot)
 	},
-	0x2d: func() {
+	0x2d: func(gb *Gameboy) {
 		// SRA L
-		gb.cpu.sra8Reg(REG_L)
+		rot := sra(gb, gb.cpu.hl.Lo())
+		gb.cpu.hl.SetLo(rot)
 	},
-	0x2e: func() {
+	0x2e: func(gb *Gameboy) {
 		// SRA (HL)
-		gb.cpu.sraHL()
+		addr := gb.cpu.hl.val
+		rot := sra(gb, gb.memoryBus.read(addr))
+		gb.memoryBus.write(addr, rot)
 	},
-	0x2f: func() {
+	0x2f: func(gb *Gameboy) {
 		// SRA A
-		gb.cpu.sra8Reg(REG_A)
+		rot := sra(gb, gb.cpu.af.Hi())
+		gb.cpu.af.SetHi(rot)
 	},
-
-	0x30: func() {
+	0x30: func(gb *Gameboy) {
 		// SWAP B
-		gb.cpu.swap8Reg(REG_B)
+		swap := swap(gb, gb.cpu.bc.Hi())
+		gb.cpu.bc.SetHi(swap)
 	},
-	0x31: func() {
+	0x31: func(gb *Gameboy) {
 		// SWAP C
-		gb.cpu.swap8Reg(REG_C)
+		swap := swap(gb, gb.cpu.bc.Lo())
+		gb.cpu.bc.SetLo(swap)
 	},
-	0x32: func() {
+	0x32: func(gb *Gameboy) {
 		// SWAP D
-		gb.cpu.swap8Reg(REG_D)
+		swap := swap(gb, gb.cpu.de.Hi())
+		gb.cpu.de.SetHi(swap)
 	},
-	0x33: func() {
+	0x33: func(gb *Gameboy) {
 		// SWAP E
-		gb.cpu.swap8Reg(REG_E)
+		swap := swap(gb, gb.cpu.de.Lo())
+		gb.cpu.de.SetLo(swap)
 	},
-	0x34: func() {
+	0x34: func(gb *Gameboy) {
 		// SWAP H
-		gb.cpu.swap8Reg(REG_H)
+		swap := swap(gb, gb.cpu.hl.Hi())
+		gb.cpu.hl.SetHi(swap)
 	},
-	0x35: func() {
+	0x35: func(gb *Gameboy) {
 		// SWAP L
-		gb.cpu.swap8Reg(REG_L)
+		swap := swap(gb, gb.cpu.hl.Lo())
+		gb.cpu.hl.SetLo(swap)
 	},
-	0x36: func() {
+	0x36: func(gb *Gameboy) {
 		// SWAP (HL)
-		gb.cpu.swapHL()
+		addr := gb.cpu.hl.val
+		swap := swap(gb, gb.memoryBus.read(addr))
+		gb.memoryBus.write(addr, swap)
 	},
-	0x37: func() {
+	0x37: func(gb *Gameboy) {
 		// SWAP A
-		gb.cpu.swap8Reg(REG_A)
+		swap := swap(gb, gb.cpu.af.Hi())
+		gb.cpu.af.SetHi(swap)
 	},
-	0x38: func() {
+	0x38: func(gb *Gameboy) {
 		// SRL B
-		gb.cpu.srl8Reg(REG_B)
+		shift := srl(gb, gb.cpu.bc.Hi())
+		gb.cpu.bc.SetHi(shift)
 	},
-	0x39: func() {
+	0x39: func(gb *Gameboy) {
 		// SRL C
-		gb.cpu.srl8Reg(REG_C)
+		shift := srl(gb, gb.cpu.bc.Lo())
+		gb.cpu.bc.SetLo(shift)
 	},
-	0x3a: func() {
+	0x3a: func(gb *Gameboy) {
 		// SRL D
-		gb.cpu.srl8Reg(REG_D)
+		shift := srl(gb, gb.cpu.de.Hi())
+		gb.cpu.de.SetHi(shift)
 	},
-	0x3b: func() {
+	0x3b: func(gb *Gameboy) {
 		// SRL E
-		gb.cpu.srl8Reg(REG_E)
+		shift := srl(gb, gb.cpu.de.Lo())
+		gb.cpu.de.SetLo(shift)
 	},
-	0x3c: func() {
+	0x3c: func(gb *Gameboy) {
 		// SRL H
-		gb.cpu.srl8Reg(REG_H)
+		shift := srl(gb, gb.cpu.hl.Hi())
+		gb.cpu.hl.SetHi(shift)
 	},
-	0x3d: func() {
+	0x3d: func(gb *Gameboy) {
 		// SRL L
-		gb.cpu.srl8Reg(REG_L)
+		shift := srl(gb, gb.cpu.hl.Lo())
+		gb.cpu.hl.SetLo(shift)
 	},
-	0x3e: func() {
+	0x3e: func(gb *Gameboy) {
 		// SRL (HL)
-		gb.cpu.srlHL()
+		addr := gb.cpu.hl.val
+		shift := srl(gb, gb.memoryBus.read(addr))
+		gb.memoryBus.write(addr, shift)
 	},
-	0x3f: func() {
+	0x3f: func(gb *Gameboy) {
 		// SRL A
-		gb.cpu.srl8Reg(REG_A)
+		shift := srl(gb, gb.cpu.af.Hi())
+		gb.cpu.hl.SetHi(shift)
 	},
-
-	0x40: func() {
+	0x40: func(gb *Gameboy) {
 		// BIT 0, B
-		gb.cpu.bit8Reg(REG_B, 0)
+		bit(gb, gb.cpu.bc.Hi(), 0)
 	},
-	0x41: func() {
+	0x41: func(gb *Gameboy) {
 		// BIT 0, C
-		gb.cpu.bit8Reg(REG_C, 0)
+		bit(gb, gb.cpu.bc.Lo(), 0)
 	},
-	0x42: func() {
+	0x42: func(gb *Gameboy) {
 		// BIT 0, D
-		gb.cpu.bit8Reg(REG_D, 0)
+		bit(gb, gb.cpu.de.Hi(), 0)
 	},
-	0x43: func() {
+	0x43: func(gb *Gameboy) {
 		// BIT 0, E
-		gb.cpu.bit8Reg(REG_E, 0)
+		bit(gb, gb.cpu.de.Lo(), 0)
 	},
-	0x44: func() {
+	0x44: func(gb *Gameboy) {
 		// BIT 0, H
-		gb.cpu.bit8Reg(REG_H, 0)
+		bit(gb, gb.cpu.hl.Hi(), 0)
 	},
-	0x45: func() {
+	0x45: func(gb *Gameboy) {
 		// BIT 0, L
-		gb.cpu.bit8Reg(REG_L, 0)
+		bit(gb, gb.cpu.hl.Lo(), 0)
 	},
-	0x46: func() {
+	0x46: func(gb *Gameboy) {
 		// BIT 0, (HL)
-		gb.cpu.bitHL(0)
+		bit(gb, gb.memoryBus.read(gb.cpu.hl.val), 0)
 	},
-	0x47: func() {
+	0x47: func(gb *Gameboy) {
 		// BIT 0, A
-		gb.cpu.bit8Reg(REG_A, 0)
+		bit(gb, gb.cpu.af.Hi(), 0)
 	},
-	0x48: func() {
+	0x48: func(gb *Gameboy) {
 		// BIT 1, B
-		gb.cpu.bit8Reg(REG_B, 1)
+		bit(gb, gb.cpu.bc.Hi(), 1)
 	},
-	0x49: func() {
+	0x49: func(gb *Gameboy) {
 		// BIT 1, C
-		gb.cpu.bit8Reg(REG_C, 1)
+		bit(gb, gb.cpu.bc.Lo(), 1)
 	},
-	0x4a: func() {
+	0x4a: func(gb *Gameboy) {
 		// BIT 1, D
-		gb.cpu.bit8Reg(REG_D, 1)
+		bit(gb, gb.cpu.de.Hi(), 1)
 	},
-	0x4b: func() {
+	0x4b: func(gb *Gameboy) {
 		// BIT 1, E
-		gb.cpu.bit8Reg(REG_E, 1)
+		bit(gb, gb.cpu.de.Lo(), 1)
 	},
-	0x4c: func() {
+	0x4c: func(gb *Gameboy) {
 		// BIT 1, H
-		gb.cpu.bit8Reg(REG_H, 1)
+		bit(gb, gb.cpu.hl.Hi(), 1)
 	},
-	0x4d: func() {
+	0x4d: func(gb *Gameboy) {
 		// BIT 1, L
-		gb.cpu.bit8Reg(REG_L, 1)
-
+		bit(gb, gb.cpu.hl.Lo(), 1)
 	},
-	0x4e: func() {
+	0x4e: func(gb *Gameboy) {
 		// BIT 1, (HL)
-		gb.cpu.bitHL(1)
+		bit(gb, gb.memoryBus.read(gb.cpu.hl.val), 1)
 	},
-	0x4f: func() {
+	0x4f: func(gb *Gameboy) {
 		// BIT 1, A
-		gb.cpu.bit8Reg(REG_A, 1)
+		bit(gb, gb.cpu.af.Hi(), 1)
 	},
-	0x50: func() {
+	0x50: func(gb *Gameboy) {
 		// BIT 2, B
-		gb.cpu.bit8Reg(REG_B, 2)
+		bit(gb, gb.cpu.bc.Hi(), 2)
 	},
-	0x51: func() {
+	0x51: func(gb *Gameboy) {
 		// BIT 2, C
-		gb.cpu.bit8Reg(REG_C, 2)
-
+		bit(gb, gb.cpu.bc.Lo(), 2)
 	},
-	0x52: func() {
+	0x52: func(gb *Gameboy) {
 		// BIT 2, D
-		gb.cpu.bit8Reg(REG_D, 2)
-
+		bit(gb, gb.cpu.de.Hi(), 2)
 	},
-	0x53: func() {
+	0x53: func(gb *Gameboy) {
 		// BIT 2, E
-		gb.cpu.bit8Reg(REG_E, 2)
+		bit(gb, gb.cpu.de.Lo(), 2)
 	},
-	0x54: func() {
+	0x54: func(gb *Gameboy) {
 		// BIT 2, H
-		gb.cpu.bit8Reg(REG_H, 2)
+		bit(gb, gb.cpu.hl.Hi(), 2)
 	},
-	0x55: func() {
+	0x55: func(gb *Gameboy) {
 		// BIT 2, L
-		gb.cpu.bit8Reg(REG_L, 2)
+		bit(gb, gb.cpu.hl.Lo(), 2)
 	},
-	0x56: func() {
+	0x56: func(gb *Gameboy) {
 		// BIT 2, (HL)
-		gb.cpu.bitHL(2)
+		bit(gb, gb.memoryBus.read(gb.cpu.hl.val), 2)
 	},
-	0x57: func() {
+	0x57: func(gb *Gameboy) {
 		// BIT 2, A
-		gb.cpu.bit8Reg(REG_A, 2)
+		bit(gb, gb.cpu.af.Hi(), 2)
 	},
-	0x58: func() {
+	0x58: func(gb *Gameboy) {
 		// BIT 3, B
-		gb.cpu.bit8Reg(REG_B, 3)
+		bit(gb, gb.cpu.bc.Hi(), 3)
 	},
-	0x59: func() {
+	0x59: func(gb *Gameboy) {
 		// BIT 3, C
-		gb.cpu.bit8Reg(REG_C, 3)
+		bit(gb, gb.cpu.bc.Lo(), 3)
 	},
-	0x5a: func() {
+	0x5a: func(gb *Gameboy) {
 		// BIT 3, D
-		gb.cpu.bit8Reg(REG_D, 3)
+		bit(gb, gb.cpu.de.Hi(), 3)
 	},
-	0x5b: func() {
+	0x5b: func(gb *Gameboy) {
 		// BIT 3, E
-		gb.cpu.bit8Reg(REG_E, 3)
+		bit(gb, gb.cpu.de.Lo(), 3)
 	},
-	0x5c: func() {
+	0x5c: func(gb *Gameboy) {
 		// BIT 3, H
-		gb.cpu.bit8Reg(REG_H, 3)
+		bit(gb, gb.cpu.hl.Hi(), 3)
 	},
-	0x5d: func() {
+	0x5d: func(gb *Gameboy) {
 		// BIT 3, L
-		gb.cpu.bit8Reg(REG_L, 3)
+		bit(gb, gb.cpu.hl.Lo(), 3)
 	},
-	0x5e: func() {
+	0x5e: func(gb *Gameboy) {
 		// BIT 3, (HL)
-		gb.cpu.bitHL(3)
+		bit(gb, gb.memoryBus.read(gb.cpu.hl.val), 3)
 	},
-	0x5f: func() {
+	0x5f: func(gb *Gameboy) {
 		// BIT 3, A
-		gb.cpu.bit8Reg(REG_A, 3)
+		bit(gb, gb.cpu.af.Hi(), 3)
 	},
-	0x60: func() {
+	0x60: func(gb *Gameboy) {
 		// BIT 4, B
-		gb.cpu.bit8Reg(REG_B, 4)
+		bit(gb, gb.cpu.bc.Hi(), 4)
 	},
-	0x61: func() {
+	0x61: func(gb *Gameboy) {
 		// BIT 4, C
-		gb.cpu.bit8Reg(REG_C, 4)
+		bit(gb, gb.cpu.bc.Lo(), 4)
 	},
-	0x62: func() {
+	0x62: func(gb *Gameboy) {
 		// BIT 4, D
-		gb.cpu.bit8Reg(REG_D, 4)
+		bit(gb, gb.cpu.de.Hi(), 4)
 	},
-	0x63: func() {
+	0x63: func(gb *Gameboy) {
 		// BIT 4, E
-		gb.cpu.bit8Reg(REG_E, 4)
+		bit(gb, gb.cpu.de.Lo(), 4)
 	},
-	0x64: func() {
+	0x64: func(gb *Gameboy) {
 		// BIT 4, H
-		gb.cpu.bit8Reg(REG_H, 4)
+		bit(gb, gb.cpu.hl.Hi(), 4)
 	},
-	0x65: func() {
+	0x65: func(gb *Gameboy) {
 		// BIT 4, L
-		gb.cpu.bit8Reg(REG_L, 4)
+		bit(gb, gb.cpu.hl.Lo(), 4)
 	},
-	0x66: func() {
+	0x66: func(gb *Gameboy) {
 		// BIT 4, (HL)
-		gb.cpu.bitHL(4)
+		bit(gb, gb.memoryBus.read(gb.cpu.hl.val), 4)
 	},
-	0x67: func() {
+	0x67: func(gb *Gameboy) {
 		// BIT 4, A
-		gb.cpu.bit8Reg(REG_A, 4)
+		bit(gb, gb.cpu.af.Hi(), 4)
 	},
-	0x68: func() {
+	0x68: func(gb *Gameboy) {
 		// BIT 5, B
-		gb.cpu.bit8Reg(REG_B, 5)
+		bit(gb, gb.cpu.bc.Hi(), 5)
 	},
-	0x69: func() {
+	0x69: func(gb *Gameboy) {
 		// BIT 5, C
-		gb.cpu.bit8Reg(REG_C, 5)
+		bit(gb, gb.cpu.bc.Lo(), 5)
 	},
-	0x6a: func() {
+	0x6a: func(gb *Gameboy) {
 		// BIT 5, D
-		gb.cpu.bit8Reg(REG_D, 5)
+		bit(gb, gb.cpu.de.Hi(), 5)
 	},
-	0x6b: func() {
+	0x6b: func(gb *Gameboy) {
 		// BIT 5, E
-		gb.cpu.bit8Reg(REG_E, 5)
+		bit(gb, gb.cpu.de.Lo(), 5)
 	},
-	0x6c: func() {
+	0x6c: func(gb *Gameboy) {
 		// BIT 5, H
-		gb.cpu.bit8Reg(REG_H, 5)
+		bit(gb, gb.cpu.hl.Hi(), 5)
 	},
-	0x6d: func() {
+	0x6d: func(gb *Gameboy) {
 		// BIT 5, L
-		gb.cpu.bit8Reg(REG_L, 5)
+		bit(gb, gb.cpu.hl.Lo(), 5)
 	},
-	0x6e: func() {
+	0x6e: func(gb *Gameboy) {
 		// BIT 5, (HL)
-		gb.cpu.bitHL(5)
+		bit(gb, gb.memoryBus.read(gb.cpu.hl.val), 5)
 	},
-	0x6f: func() {
+	0x6f: func(gb *Gameboy) {
 		// BIT 5, A
-		gb.cpu.bit8Reg(REG_A, 5)
+		bit(gb, gb.cpu.af.Hi(), 5)
 	},
-	0x70: func() {
+	0x70: func(gb *Gameboy) {
 		// BIT 6, B
-		gb.cpu.bit8Reg(REG_B, 6)
-
+		bit(gb, gb.cpu.bc.Hi(), 6)
 	},
-	0x71: func() {
+	0x71: func(gb *Gameboy) {
 		// BIT 6, C
-		gb.cpu.bit8Reg(REG_C, 6)
-
+		bit(gb, gb.cpu.bc.Lo(), 6)
 	},
-	0x72: func() {
+	0x72: func(gb *Gameboy) {
 		// BIT 6, D
-		gb.cpu.bit8Reg(REG_D, 6)
-
+		bit(gb, gb.cpu.de.Hi(), 6)
 	},
-	0x73: func() {
+	0x73: func(gb *Gameboy) {
 		// BIT 6, E
-		gb.cpu.bit8Reg(REG_E, 6)
-
+		bit(gb, gb.cpu.de.Lo(), 6)
 	},
-	0x74: func() {
+	0x74: func(gb *Gameboy) {
 		// BIT 6, H
-		gb.cpu.bit8Reg(REG_H, 6)
-
+		bit(gb, gb.cpu.hl.Hi(), 6)
 	},
-	0x75: func() {
+	0x75: func(gb *Gameboy) {
 		// BIT 6, L
-		gb.cpu.bit8Reg(REG_L, 6)
-
+		bit(gb, gb.cpu.hl.Lo(), 6)
 	},
-	0x76: func() {
+	0x76: func(gb *Gameboy) {
 		// BIT 6, (HL)
-		gb.cpu.bitHL(6)
+		bit(gb, gb.memoryBus.read(gb.cpu.hl.val), 6)
 	},
-	0x77: func() {
+	0x77: func(gb *Gameboy) {
 		// BIT 6, A
-		gb.cpu.bit8Reg(REG_A, 6)
-
+		bit(gb, gb.cpu.af.Hi(), 6)
 	},
-	0x78: func() {
+	0x78: func(gb *Gameboy) {
 		// BIT 7, B
-		gb.cpu.bit8Reg(REG_B, 7)
-
+		bit(gb, gb.cpu.bc.Hi(), 7)
 	},
-	0x79: func() {
+	0x79: func(gb *Gameboy) {
 		// BIT 7, C
-		gb.cpu.bit8Reg(REG_C, 7)
-
+		bit(gb, gb.cpu.bc.Lo(), 7)
 	},
-	0x7a: func() {
+	0x7a: func(gb *Gameboy) {
 		// BIT 7, D
-		gb.cpu.bit8Reg(REG_D, 7)
-
+		bit(gb, gb.cpu.de.Hi(), 7)
 	},
-	0x7b: func() {
+	0x7b: func(gb *Gameboy) {
 		// BIT 7, E
-		gb.cpu.bit8Reg(REG_E, 7)
-
+		bit(gb, gb.cpu.de.Lo(), 7)
 	},
-	0x7c: func() {
+	0x7c: func(gb *Gameboy) {
 		// BIT 7, H
-		gb.cpu.bit8Reg(REG_H, 7)
-
+		bit(gb, gb.cpu.hl.Hi(), 7)
 	},
-	0x7d: func() {
+	0x7d: func(gb *Gameboy) {
 		// BIT 7, L
-		gb.cpu.bit8Reg(REG_L, 7)
-
+		bit(gb, gb.cpu.hl.Lo(), 7)
 	},
-	0x7e: func() {
+	0x7e: func(gb *Gameboy) {
 		// BIT 7, (HL)
-		gb.cpu.bitHL(7)
+		bit(gb, gb.memoryBus.read(gb.cpu.hl.val), 7)
 	},
-	0x7f: func() {
+	0x7f: func(gb *Gameboy) {
 		// BIT 7, A
-		gb.cpu.bit8Reg(REG_A, 7)
-
+		bit(gb, gb.cpu.af.Hi(), 7)
 	},
-
-	0x80: func() {
+	0x80: func(gb *Gameboy) {
 		// RES 0, B
-		gb.cpu.set8Reg(REG_B, clearBit(gb.cpu.read8Reg(REG_B), 0))
+		gb.cpu.bc.SetHi(clearBit(gb.cpu.bc.Hi(), 0))
 	},
-	0x81: func() {
+	0x81: func(gb *Gameboy) {
 		// RES 0, C
-		gb.cpu.set8Reg(REG_C, clearBit(gb.cpu.read8Reg(REG_C), 0))
+		gb.cpu.bc.SetLo(clearBit(gb.cpu.bc.Lo(), 0))
 	},
-	0x82: func() {
+	0x82: func(gb *Gameboy) {
 		// RES 0, D
-		gb.cpu.set8Reg(REG_D, clearBit(gb.cpu.read8Reg(REG_D), 0))
+		gb.cpu.de.SetHi(clearBit(gb.cpu.de.Hi(), 0))
 	},
-	0x83: func() {
+	0x83: func(gb *Gameboy) {
 		// RES 0, E
-		gb.cpu.set8Reg(REG_E, clearBit(gb.cpu.read8Reg(REG_E), 0))
+		gb.cpu.de.SetLo(clearBit(gb.cpu.de.Lo(), 0))
 	},
-	0x84: func() {
+	0x84: func(gb *Gameboy) {
 		// RES 0, H
-		gb.cpu.set8Reg(REG_H, clearBit(gb.cpu.read8Reg(REG_H), 0))
+		gb.cpu.hl.SetHi(clearBit(gb.cpu.hl.Hi(), 0))
 	},
-	0x85: func() {
+	0x85: func(gb *Gameboy) {
 		// RES 0, L
-		gb.cpu.set8Reg(REG_L, clearBit(gb.cpu.read8Reg(REG_L), 0))
+		gb.cpu.hl.SetLo(clearBit(gb.cpu.hl.Lo(), 0))
 	},
-	0x86: func() {
+	0x86: func(gb *Gameboy) {
 		// RES 0, (HL)
-		hl := gb.cpu.read16Reg(REG_HL)
-		val := gb.bus.read(hl)
-		gb.bus.write(hl, clearBit(val, 0))
+		gb.memoryBus.write(gb.cpu.hl.val, clearBit(gb.memoryBus.read(gb.cpu.hl.val), 0))
 	},
-	0x87: func() {
+	0x87: func(gb *Gameboy) {
 		// RES 0, A
-		gb.cpu.set8Reg(REG_A, clearBit(gb.cpu.read8Reg(REG_A), 0))
+		gb.cpu.af.SetHi(clearBit(gb.cpu.af.Hi(), 0))
 	},
-	0x88: func() {
+	0x88: func(gb *Gameboy) {
 		// RES 1, B
-		gb.cpu.set8Reg(REG_B, clearBit(gb.cpu.read8Reg(REG_B), 1))
+		gb.cpu.bc.SetHi(clearBit(gb.cpu.bc.Hi(), 1))
 	},
-	0x89: func() {
+	0x89: func(gb *Gameboy) {
 		// RES 1, C
-		gb.cpu.set8Reg(REG_C, clearBit(gb.cpu.read8Reg(REG_C), 1))
+		gb.cpu.bc.SetLo(clearBit(gb.cpu.bc.Lo(), 1))
 	},
-	0x8a: func() {
+	0x8a: func(gb *Gameboy) {
 		// RES 1, D
-		gb.cpu.set8Reg(REG_D, clearBit(gb.cpu.read8Reg(REG_D), 1))
+		gb.cpu.de.SetHi(clearBit(gb.cpu.de.Hi(), 1))
 	},
-	0x8b: func() {
+	0x8b: func(gb *Gameboy) {
 		// RES 1, E
-		gb.cpu.set8Reg(REG_E, clearBit(gb.cpu.read8Reg(REG_E), 1))
+		gb.cpu.de.SetLo(clearBit(gb.cpu.de.Lo(), 1))
 	},
-	0x8c: func() {
+	0x8c: func(gb *Gameboy) {
 		// RES 1, H
-		gb.cpu.set8Reg(REG_H, clearBit(gb.cpu.read8Reg(REG_H), 1))
+		gb.cpu.hl.SetHi(clearBit(gb.cpu.hl.Hi(), 1))
 	},
-	0x8d: func() {
+	0x8d: func(gb *Gameboy) {
 		// RES 1, L
-		gb.cpu.set8Reg(REG_L, clearBit(gb.cpu.read8Reg(REG_L), 1))
+		gb.cpu.hl.SetLo(clearBit(gb.cpu.hl.Lo(), 1))
 	},
-	0x8e: func() {
+	0x8e: func(gb *Gameboy) {
 		// RES 1, (HL)
-		hl := gb.cpu.read16Reg(REG_HL)
-		val := gb.bus.read(hl)
-		gb.bus.write(hl, clearBit(val, 1))
+		gb.memoryBus.write(gb.cpu.hl.val, clearBit(gb.memoryBus.read(gb.cpu.hl.val), 1))
 	},
-	0x8f: func() {
+	0x8f: func(gb *Gameboy) {
 		// RES 1, A
-		gb.cpu.set8Reg(REG_A, clearBit(gb.cpu.read8Reg(REG_A), 1))
+		gb.cpu.af.SetHi(clearBit(gb.cpu.af.Hi(), 1))
 	},
-	0x90: func() {
+	0x90: func(gb *Gameboy) {
 		// RES 2, B
-		gb.cpu.set8Reg(REG_B, clearBit(gb.cpu.read8Reg(REG_B), 2))
+		gb.cpu.bc.SetHi(clearBit(gb.cpu.bc.Hi(), 2))
 	},
-	0x91: func() {
+	0x91: func(gb *Gameboy) {
 		// RES 2, C
-		gb.cpu.set8Reg(REG_C, clearBit(gb.cpu.read8Reg(REG_C), 2))
+		gb.cpu.bc.SetLo(clearBit(gb.cpu.bc.Lo(), 2))
 	},
-	0x92: func() {
+	0x92: func(gb *Gameboy) {
 		// RES 2, D
-		gb.cpu.set8Reg(REG_D, clearBit(gb.cpu.read8Reg(REG_D), 2))
+		gb.cpu.de.SetHi(clearBit(gb.cpu.de.Hi(), 2))
 	},
-	0x93: func() {
+	0x93: func(gb *Gameboy) {
 		// RES 2, E
-		gb.cpu.set8Reg(REG_E, clearBit(gb.cpu.read8Reg(REG_E), 2))
+		gb.cpu.de.SetLo(clearBit(gb.cpu.de.Lo(), 2))
 	},
-	0x94: func() {
+	0x94: func(gb *Gameboy) {
 		// RES 2, H
-		gb.cpu.set8Reg(REG_H, clearBit(gb.cpu.read8Reg(REG_H), 2))
+		gb.cpu.hl.SetHi(clearBit(gb.cpu.hl.Hi(), 2))
 	},
-	0x95: func() {
+	0x95: func(gb *Gameboy) {
 		// RES 2, L
-		gb.cpu.set8Reg(REG_L, clearBit(gb.cpu.read8Reg(REG_L), 2))
+		gb.cpu.hl.SetLo(clearBit(gb.cpu.hl.Lo(), 2))
 	},
-	0x96: func() {
+	0x96: func(gb *Gameboy) {
 		// RES 2, (HL)
-		hl := gb.cpu.read16Reg(REG_HL)
-		val := gb.bus.read(hl)
-		gb.bus.write(hl, clearBit(val, 2))
+		gb.memoryBus.write(gb.cpu.hl.val, clearBit(gb.memoryBus.read(gb.cpu.hl.val), 2))
 	},
-	0x97: func() {
+	0x97: func(gb *Gameboy) {
 		// RES 2, A
-		gb.cpu.set8Reg(REG_A, clearBit(gb.cpu.read8Reg(REG_A), 2))
+		gb.cpu.af.SetHi(clearBit(gb.cpu.af.Hi(), 2))
 	},
-	0x98: func() {
+	0x98: func(gb *Gameboy) {
 		// RES 3, B
-		gb.cpu.set8Reg(REG_B, clearBit(gb.cpu.read8Reg(REG_B), 3))
+		gb.cpu.bc.SetHi(clearBit(gb.cpu.bc.Hi(), 3))
 	},
-	0x99: func() {
+	0x99: func(gb *Gameboy) {
 		// RES 3, C
-		gb.cpu.set8Reg(REG_C, clearBit(gb.cpu.read8Reg(REG_C), 3))
+		gb.cpu.bc.SetLo(clearBit(gb.cpu.bc.Lo(), 3))
 	},
-	0x9a: func() {
+	0x9a: func(gb *Gameboy) {
 		// RES 3, D
-		gb.cpu.set8Reg(REG_D, clearBit(gb.cpu.read8Reg(REG_D), 3))
+		gb.cpu.de.SetHi(clearBit(gb.cpu.de.Hi(), 3))
 	},
-	0x9b: func() {
+	0x9b: func(gb *Gameboy) {
 		// RES 3, E
-		gb.cpu.set8Reg(REG_E, clearBit(gb.cpu.read8Reg(REG_E), 3))
+		gb.cpu.de.SetLo(clearBit(gb.cpu.de.Lo(), 3))
 	},
-	0x9c: func() {
+	0x9c: func(gb *Gameboy) {
 		// RES 3, H
-		gb.cpu.set8Reg(REG_H, clearBit(gb.cpu.read8Reg(REG_H), 3))
+		gb.cpu.hl.SetHi(clearBit(gb.cpu.hl.Hi(), 3))
 	},
-	0x9d: func() {
+	0x9d: func(gb *Gameboy) {
 		// RES 3, L
-		gb.cpu.set8Reg(REG_L, clearBit(gb.cpu.read8Reg(REG_L), 3))
+		gb.cpu.hl.SetLo(clearBit(gb.cpu.hl.Lo(), 3))
 	},
-	0x9e: func() {
+	0x9e: func(gb *Gameboy) {
 		// RES 3, (HL)
-		hl := gb.cpu.read16Reg(REG_HL)
-		val := gb.bus.read(hl)
-		gb.bus.write(hl, clearBit(val, 3))
+		gb.memoryBus.write(gb.cpu.hl.val, clearBit(gb.memoryBus.read(gb.cpu.hl.val), 3))
 	},
-	0x9f: func() {
+	0x9f: func(gb *Gameboy) {
 		// RES 3, A
-		gb.cpu.set8Reg(REG_A, clearBit(gb.cpu.read8Reg(REG_A), 3))
+		gb.cpu.af.SetHi(clearBit(gb.cpu.af.Hi(), 3))
 	},
 
-	0xa0: func() {
+	0xa0: func(gb *Gameboy) {
 		// RES 4, B
-		gb.cpu.set8Reg(REG_B, clearBit(gb.cpu.read8Reg(REG_B), 4))
+		gb.cpu.bc.SetHi(clearBit(gb.cpu.bc.Hi(), 4))
 	},
-	0xa1: func() {
+	0xa1: func(gb *Gameboy) {
 		// RES 4, C
-		gb.cpu.set8Reg(REG_C, clearBit(gb.cpu.read8Reg(REG_C), 4))
+		gb.cpu.bc.SetLo(clearBit(gb.cpu.bc.Lo(), 4))
 	},
-	0xa2: func() {
+	0xa2: func(gb *Gameboy) {
 		// RES 4, D
-		gb.cpu.set8Reg(REG_D, clearBit(gb.cpu.read8Reg(REG_D), 4))
+		gb.cpu.de.SetHi(clearBit(gb.cpu.de.Hi(), 4))
 	},
-	0xa3: func() {
+	0xa3: func(gb *Gameboy) {
 		// RES 4, E
-		gb.cpu.set8Reg(REG_E, clearBit(gb.cpu.read8Reg(REG_E), 4))
+		gb.cpu.de.SetLo(clearBit(gb.cpu.de.Lo(), 4))
 	},
-	0xa4: func() {
+	0xa4: func(gb *Gameboy) {
 		// RES 4, H
-		gb.cpu.set8Reg(REG_H, clearBit(gb.cpu.read8Reg(REG_H), 4))
+		gb.cpu.hl.SetHi(clearBit(gb.cpu.hl.Hi(), 4))
 	},
-	0xa5: func() {
+	0xa5: func(gb *Gameboy) {
 		// RES 4, L
-		gb.cpu.set8Reg(REG_L, clearBit(gb.cpu.read8Reg(REG_L), 4))
+		gb.cpu.hl.SetLo(clearBit(gb.cpu.hl.Lo(), 4))
 	},
-	0xa6: func() {
+	0xa6: func(gb *Gameboy) {
 		// RES 4, (HL)
-		hl := gb.cpu.read16Reg(REG_HL)
-		val := gb.bus.read(hl)
-		gb.bus.write(hl, clearBit(val, 4))
+		gb.memoryBus.write(gb.cpu.hl.val, clearBit(gb.memoryBus.read(gb.cpu.hl.val), 4))
 	},
-	0xa7: func() {
+	0xa7: func(gb *Gameboy) {
 		// RES 4, A
-		gb.cpu.set8Reg(REG_A, clearBit(gb.cpu.read8Reg(REG_A), 4))
+		gb.cpu.af.SetHi(clearBit(gb.cpu.af.Hi(), 4))
 	},
-	0xa8: func() {
+	0xa8: func(gb *Gameboy) {
 		// RES 5, B
-		gb.cpu.set8Reg(REG_B, clearBit(gb.cpu.read8Reg(REG_B), 5))
+		gb.cpu.bc.SetHi(clearBit(gb.cpu.bc.Hi(), 5))
 	},
-	0xa9: func() {
+	0xa9: func(gb *Gameboy) {
 		// RES 5, C
-		gb.cpu.set8Reg(REG_C, clearBit(gb.cpu.read8Reg(REG_C), 5))
+		gb.cpu.bc.SetLo(clearBit(gb.cpu.bc.Lo(), 5))
 	},
-	0xaa: func() {
+	0xaa: func(gb *Gameboy) {
 		// RES 5, D
-		gb.cpu.set8Reg(REG_D, clearBit(gb.cpu.read8Reg(REG_D), 5))
+		gb.cpu.de.SetHi(clearBit(gb.cpu.de.Hi(), 5))
 	},
-	0xab: func() {
+	0xab: func(gb *Gameboy) {
 		// RES 5, E
-		gb.cpu.set8Reg(REG_E, clearBit(gb.cpu.read8Reg(REG_E), 5))
+		gb.cpu.de.SetLo(clearBit(gb.cpu.de.Lo(), 5))
 	},
-	0xac: func() {
+	0xac: func(gb *Gameboy) {
 		// RES 5, H
-		gb.cpu.set8Reg(REG_H, clearBit(gb.cpu.read8Reg(REG_H), 5))
+		gb.cpu.hl.SetHi(clearBit(gb.cpu.hl.Hi(), 5))
 	},
-	0xad: func() {
+	0xad: func(gb *Gameboy) {
 		// RES 5, L
-		gb.cpu.set8Reg(REG_L, clearBit(gb.cpu.read8Reg(REG_L), 5))
+		gb.cpu.hl.SetLo(clearBit(gb.cpu.hl.Lo(), 5))
 	},
-	0xae: func() {
+	0xae: func(gb *Gameboy) {
 		// RES 5, (HL)
-		hl := gb.cpu.read16Reg(REG_HL)
-		val := gb.bus.read(hl)
-		gb.bus.write(hl, clearBit(val, 5))
+		gb.memoryBus.write(gb.cpu.hl.val, clearBit(gb.memoryBus.read(gb.cpu.hl.val), 5))
 	},
-	0xaf: func() {
+	0xaf: func(gb *Gameboy) {
 		// RES 5, A
-		gb.cpu.set8Reg(REG_A, clearBit(gb.cpu.read8Reg(REG_A), 5))
+		gb.cpu.af.SetHi(clearBit(gb.cpu.af.Hi(), 5))
 	},
 
-	0xb0: func() {
+	0xb0: func(gb *Gameboy) {
 		// RES 6, B
-		gb.cpu.set8Reg(REG_B, clearBit(gb.cpu.read8Reg(REG_B), 6))
+		gb.cpu.bc.SetHi(clearBit(gb.cpu.bc.Hi(), 6))
 	},
-	0xb1: func() {
+	0xb1: func(gb *Gameboy) {
 		// RES 6, C
-		gb.cpu.set8Reg(REG_C, clearBit(gb.cpu.read8Reg(REG_C), 6))
+		gb.cpu.bc.SetLo(clearBit(gb.cpu.bc.Lo(), 6))
 	},
-	0xb2: func() {
+	0xb2: func(gb *Gameboy) {
 		// RES 6, D
-		gb.cpu.set8Reg(REG_D, clearBit(gb.cpu.read8Reg(REG_D), 6))
+		gb.cpu.de.SetHi(clearBit(gb.cpu.de.Hi(), 6))
 	},
-	0xb3: func() {
+	0xb3: func(gb *Gameboy) {
 		// RES 6, E
-		gb.cpu.set8Reg(REG_E, clearBit(gb.cpu.read8Reg(REG_E), 6))
+		gb.cpu.de.SetLo(clearBit(gb.cpu.de.Lo(), 6))
 	},
-	0xb4: func() {
+	0xb4: func(gb *Gameboy) {
 		// RES 6, H
-		gb.cpu.set8Reg(REG_H, clearBit(gb.cpu.read8Reg(REG_H), 6))
+		gb.cpu.hl.SetHi(clearBit(gb.cpu.hl.Hi(), 6))
 	},
-	0xb5: func() {
+	0xb5: func(gb *Gameboy) {
 		// RES 6, L
-		gb.cpu.set8Reg(REG_L, clearBit(gb.cpu.read8Reg(REG_L), 6))
+		gb.cpu.hl.SetLo(clearBit(gb.cpu.hl.Lo(), 6))
 	},
-	0xb6: func() {
+	0xb6: func(gb *Gameboy) {
 		// RES 6, (HL)
-		hl := gb.cpu.read16Reg(REG_HL)
-		val := gb.bus.read(hl)
-		gb.bus.write(hl, clearBit(val, 6))
+		gb.memoryBus.write(gb.cpu.hl.val, clearBit(gb.memoryBus.read(gb.cpu.hl.val), 6))
 	},
-	0xb7: func() {
+	0xb7: func(gb *Gameboy) {
 		// RES 6, A
-		gb.cpu.set8Reg(REG_A, clearBit(gb.cpu.read8Reg(REG_A), 6))
+		gb.cpu.af.SetHi(clearBit(gb.cpu.af.Hi(), 6))
 	},
-	0xb8: func() {
+	0xb8: func(gb *Gameboy) {
 		// RES 7, B
-		gb.cpu.set8Reg(REG_B, clearBit(gb.cpu.read8Reg(REG_B), 7))
+		gb.cpu.bc.SetHi(clearBit(gb.cpu.bc.Hi(), 7))
 	},
-	0xb9: func() {
+	0xb9: func(gb *Gameboy) {
 		// RES 7, C
-		gb.cpu.set8Reg(REG_C, clearBit(gb.cpu.read8Reg(REG_C), 7))
+		gb.cpu.bc.SetLo(clearBit(gb.cpu.bc.Lo(), 7))
 	},
-	0xba: func() {
+	0xba: func(gb *Gameboy) {
 		// RES 7, D
-		gb.cpu.set8Reg(REG_D, clearBit(gb.cpu.read8Reg(REG_D), 7))
+		gb.cpu.de.SetHi(clearBit(gb.cpu.de.Hi(), 7))
 	},
-	0xbb: func() {
+	0xbb: func(gb *Gameboy) {
 		// RES 7, E
-		gb.cpu.set8Reg(REG_E, clearBit(gb.cpu.read8Reg(REG_E), 7))
+		gb.cpu.de.SetLo(clearBit(gb.cpu.de.Lo(), 7))
 	},
-	0xbc: func() {
+	0xbc: func(gb *Gameboy) {
 		// RES 7, H
-		gb.cpu.set8Reg(REG_H, clearBit(gb.cpu.read8Reg(REG_H), 7))
+		gb.cpu.hl.SetHi(clearBit(gb.cpu.hl.Hi(), 7))
 	},
-	0xbd: func() {
+	0xbd: func(gb *Gameboy) {
 		// RES 7, L
-		gb.cpu.set8Reg(REG_L, clearBit(gb.cpu.read8Reg(REG_L), 7))
+		gb.cpu.hl.SetLo(clearBit(gb.cpu.hl.Lo(), 7))
 	},
-	0xbe: func() {
+	0xbe: func(gb *Gameboy) {
 		// RES 7, (HL)
-		hl := gb.cpu.read16Reg(REG_HL)
-		val := gb.bus.read(hl)
-		gb.bus.write(hl, clearBit(val, 7))
+		gb.memoryBus.write(gb.cpu.hl.val, clearBit(gb.memoryBus.read(gb.cpu.hl.val), 7))
 	},
-	0xbf: func() {
+	0xbf: func(gb *Gameboy) {
 		// RES 7, A
-		gb.cpu.set8Reg(REG_A, clearBit(gb.cpu.read8Reg(REG_A), 7))
+		gb.cpu.af.SetHi(clearBit(gb.cpu.af.Hi(), 7))
 	},
 
-	0xc0: func() {
+	0xc0: func(gb *Gameboy) {
 		// SET 0, B
-		gb.cpu.set8Reg(REG_B, setBit(gb.cpu.read8Reg(REG_B), 0))
+		gb.cpu.bc.SetHi(setBit(gb.cpu.bc.Hi(), 0))
 	},
-	0xc1: func() {
+	0xc1: func(gb *Gameboy) {
 		// SET 0, C
-		gb.cpu.set8Reg(REG_C, setBit(gb.cpu.read8Reg(REG_C), 0))
+		gb.cpu.bc.SetLo(setBit(gb.cpu.bc.Lo(), 0))
 	},
-	0xc2: func() {
+	0xc2: func(gb *Gameboy) {
 		// SET 0, D
-		gb.cpu.set8Reg(REG_D, setBit(gb.cpu.read8Reg(REG_D), 0))
+		gb.cpu.de.SetHi(setBit(gb.cpu.de.Hi(), 0))
 	},
-	0xc3: func() {
+	0xc3: func(gb *Gameboy) {
 		// SET 0, E
-		gb.cpu.set8Reg(REG_E, setBit(gb.cpu.read8Reg(REG_E), 0))
+		gb.cpu.de.SetLo(setBit(gb.cpu.de.Lo(), 0))
 	},
-	0xc4: func() {
+	0xc4: func(gb *Gameboy) {
 		// SET 0, H
-		gb.cpu.set8Reg(REG_H, setBit(gb.cpu.read8Reg(REG_H), 0))
+		gb.cpu.hl.SetHi(setBit(gb.cpu.hl.Hi(), 0))
 	},
-	0xc5: func() {
+	0xc5: func(gb *Gameboy) {
 		// SET 0, L
-		gb.cpu.set8Reg(REG_L, setBit(gb.cpu.read8Reg(REG_L), 0))
+		gb.cpu.hl.SetLo(setBit(gb.cpu.hl.Lo(), 0))
 	},
-	0xc6: func() {
+	0xc6: func(gb *Gameboy) {
 		// SET 0, (HL)
-		hl := gb.cpu.read16Reg(REG_HL)
-		val := gb.bus.read(hl)
-		gb.bus.write(hl, setBit(val, 0))
+		gb.cpu.hl.SetLo(setBit(gb.memoryBus.read(gb.cpu.hl.val), 0))
 	},
-	0xc7: func() {
+	0xc7: func(gb *Gameboy) {
 		// SET 0, A
-		gb.cpu.set8Reg(REG_A, setBit(gb.cpu.read8Reg(REG_A), 0))
+		gb.cpu.bc.SetHi(setBit(gb.cpu.bc.Hi(), 0))
 	},
-	0xc8: func() {
+	0xc8: func(gb *Gameboy) {
 		// SET 1, B
-		gb.cpu.set8Reg(REG_B, setBit(gb.cpu.read8Reg(REG_B), 1))
+		gb.cpu.bc.SetHi(setBit(gb.cpu.bc.Hi(), 1))
 	},
-	0xc9: func() {
+	0xc9: func(gb *Gameboy) {
 		// SET 1, C
-		gb.cpu.set8Reg(REG_C, setBit(gb.cpu.read8Reg(REG_C), 1))
+		gb.cpu.bc.SetLo(setBit(gb.cpu.bc.Lo(), 1))
 	},
-	0xca: func() {
+	0xca: func(gb *Gameboy) {
 		// SET 1, D
-		gb.cpu.set8Reg(REG_D, setBit(gb.cpu.read8Reg(REG_D), 1))
+		gb.cpu.de.SetHi(setBit(gb.cpu.de.Hi(), 1))
 	},
-	0xcb: func() {
+	0xcb: func(gb *Gameboy) {
 		// SET 1, E
-		gb.cpu.set8Reg(REG_E, setBit(gb.cpu.read8Reg(REG_E), 1))
+		gb.cpu.de.SetLo(setBit(gb.cpu.de.Lo(), 1))
 	},
-	0xcc: func() {
+	0xcc: func(gb *Gameboy) {
 		// SET 1, H
-		gb.cpu.set8Reg(REG_H, setBit(gb.cpu.read8Reg(REG_H), 1))
+		gb.cpu.hl.SetHi(setBit(gb.cpu.hl.Hi(), 1))
 	},
-	0xcd: func() {
+	0xcd: func(gb *Gameboy) {
 		// SET 1, L
-		gb.cpu.set8Reg(REG_L, setBit(gb.cpu.read8Reg(REG_L), 1))
+		gb.cpu.hl.SetLo(setBit(gb.cpu.hl.Lo(), 1))
 	},
-	0xce: func() {
+	0xce: func(gb *Gameboy) {
 		// SET 1, HL
-		hl := gb.cpu.read16Reg(REG_HL)
-		val := gb.bus.read(hl)
-		gb.bus.write(hl, setBit(val, 1))
+		gb.cpu.hl.SetLo(setBit(gb.memoryBus.read(gb.cpu.hl.val), 1))
 	},
-	0xcf: func() {
+	0xcf: func(gb *Gameboy) {
 		// SET 1, A
-		gb.cpu.set8Reg(REG_A, setBit(gb.cpu.read8Reg(REG_A), 1))
+		gb.cpu.bc.SetHi(setBit(gb.cpu.bc.Hi(), 1))
 	},
 
-	0xd0: func() {
+	0xd0: func(gb *Gameboy) {
 		// SET 2, B
-		gb.cpu.set8Reg(REG_B, setBit(gb.cpu.read8Reg(REG_B), 2))
+		gb.cpu.bc.SetHi(setBit(gb.cpu.bc.Hi(), 2))
 	},
-	0xd1: func() {
+	0xd1: func(gb *Gameboy) {
 		// SET 2, C
-		gb.cpu.set8Reg(REG_C, setBit(gb.cpu.read8Reg(REG_C), 2))
+		gb.cpu.bc.SetLo(setBit(gb.cpu.bc.Lo(), 2))
 	},
-	0xd2: func() {
+	0xd2: func(gb *Gameboy) {
 		// SET 2, D
-		gb.cpu.set8Reg(REG_D, setBit(gb.cpu.read8Reg(REG_D), 2))
+		gb.cpu.de.SetHi(setBit(gb.cpu.de.Hi(), 2))
 	},
-	0xd3: func() {
+	0xd3: func(gb *Gameboy) {
 		// SET 2, E
-		gb.cpu.set8Reg(REG_E, setBit(gb.cpu.read8Reg(REG_E), 2))
+		gb.cpu.de.SetLo(setBit(gb.cpu.de.Lo(), 2))
 	},
-	0xd4: func() {
+	0xd4: func(gb *Gameboy) {
 		// SET 2, H
-		gb.cpu.set8Reg(REG_H, setBit(gb.cpu.read8Reg(REG_H), 2))
+		gb.cpu.hl.SetHi(setBit(gb.cpu.hl.Hi(), 2))
 	},
-	0xd5: func() {
+	0xd5: func(gb *Gameboy) {
 		// SET 2, L
-		gb.cpu.set8Reg(REG_L, setBit(gb.cpu.read8Reg(REG_L), 2))
+		gb.cpu.hl.SetLo(setBit(gb.cpu.hl.Lo(), 2))
 	},
-	0xd6: func() {
+	0xd6: func(gb *Gameboy) {
 		// SET 02 HL
-		hl := gb.cpu.read16Reg(REG_HL)
-		val := gb.bus.read(hl)
-		gb.bus.write(hl, setBit(val, 2))
+		gb.cpu.hl.SetLo(setBit(gb.memoryBus.read(gb.cpu.hl.val), 2))
 	},
-	0xd7: func() {
+	0xd7: func(gb *Gameboy) {
 		// SET 2, A
-		gb.cpu.set8Reg(REG_A, setBit(gb.cpu.read8Reg(REG_A), 2))
+		gb.cpu.bc.SetHi(setBit(gb.cpu.bc.Hi(), 2))
 	},
-	0xd8: func() {
+	0xd8: func(gb *Gameboy) {
 		// SET 3, B
-		gb.cpu.set8Reg(REG_B, setBit(gb.cpu.read8Reg(REG_B), 3))
+		gb.cpu.bc.SetHi(setBit(gb.cpu.bc.Hi(), 3))
 	},
-	0xd9: func() {
+	0xd9: func(gb *Gameboy) {
 		// SET 3, C
-		gb.cpu.set8Reg(REG_C, setBit(gb.cpu.read8Reg(REG_C), 3))
+		gb.cpu.bc.SetLo(setBit(gb.cpu.bc.Lo(), 3))
 	},
-	0xda: func() {
+	0xda: func(gb *Gameboy) {
 		// SET 3, D
-		gb.cpu.set8Reg(REG_D, setBit(gb.cpu.read8Reg(REG_D), 3))
+		gb.cpu.de.SetHi(setBit(gb.cpu.de.Hi(), 3))
 	},
-	0xdb: func() {
+	0xdb: func(gb *Gameboy) {
 		// SET 3, E
-		gb.cpu.set8Reg(REG_E, setBit(gb.cpu.read8Reg(REG_E), 3))
+		gb.cpu.de.SetLo(setBit(gb.cpu.de.Lo(), 3))
 	},
-	0xdc: func() {
+	0xdc: func(gb *Gameboy) {
 		// SET 3, H
-		gb.cpu.set8Reg(REG_H, setBit(gb.cpu.read8Reg(REG_H), 3))
+		gb.cpu.hl.SetHi(setBit(gb.cpu.hl.Hi(), 3))
 	},
-	0xdd: func() {
+	0xdd: func(gb *Gameboy) {
 		// SET 3, L
-		gb.cpu.set8Reg(REG_L, setBit(gb.cpu.read8Reg(REG_L), 3))
+		gb.cpu.hl.SetLo(setBit(gb.cpu.hl.Lo(), 3))
 	},
-	0xde: func() {
+	0xde: func(gb *Gameboy) {
 		// SET 3, HL
-		hl := gb.cpu.read16Reg(REG_HL)
-		val := gb.bus.read(hl)
-		gb.bus.write(hl, setBit(val, 3))
+		gb.cpu.hl.SetLo(setBit(gb.memoryBus.read(gb.cpu.hl.val), 3))
 	},
-	0xdf: func() {
+	0xdf: func(gb *Gameboy) {
 		// SET 3, A
-		gb.cpu.set8Reg(REG_A, setBit(gb.cpu.read8Reg(REG_A), 3))
+		gb.cpu.bc.SetHi(setBit(gb.cpu.bc.Hi(), 3))
 	},
 
-	0xe0: func() {
+	0xe0: func(gb *Gameboy) {
 		// SET 4, B
-		gb.cpu.set8Reg(REG_B, setBit(gb.cpu.read8Reg(REG_B), 4))
+		gb.cpu.bc.SetHi(setBit(gb.cpu.bc.Hi(), 4))
 	},
-	0xe1: func() {
+	0xe1: func(gb *Gameboy) {
 		// SET 4, C
-		gb.cpu.set8Reg(REG_C, setBit(gb.cpu.read8Reg(REG_C), 4))
+		gb.cpu.bc.SetLo(setBit(gb.cpu.bc.Lo(), 4))
 	},
-	0xe2: func() {
+	0xe2: func(gb *Gameboy) {
 		// SET 4, D
-		gb.cpu.set8Reg(REG_D, setBit(gb.cpu.read8Reg(REG_D), 4))
+		gb.cpu.de.SetHi(setBit(gb.cpu.de.Hi(), 4))
 	},
-	0xe3: func() {
+	0xe3: func(gb *Gameboy) {
 		// SET 4, E
-		gb.cpu.set8Reg(REG_E, setBit(gb.cpu.read8Reg(REG_E), 4))
+		gb.cpu.de.SetLo(setBit(gb.cpu.de.Lo(), 4))
 	},
-	0xe4: func() {
+	0xe4: func(gb *Gameboy) {
 		// SET 4, H
-		gb.cpu.set8Reg(REG_H, setBit(gb.cpu.read8Reg(REG_H), 4))
+		gb.cpu.hl.SetHi(setBit(gb.cpu.hl.Hi(), 4))
 	},
-	0xe5: func() {
+	0xe5: func(gb *Gameboy) {
 		// SET 4, L
-		gb.cpu.set8Reg(REG_L, setBit(gb.cpu.read8Reg(REG_L), 4))
+		gb.cpu.hl.SetLo(setBit(gb.cpu.hl.Lo(), 4))
 	},
-	0xe6: func() {
+	0xe6: func(gb *Gameboy) {
 		// SET 04 HL
-		hl := gb.cpu.read16Reg(REG_HL)
-		val := gb.bus.read(hl)
-		gb.bus.write(hl, setBit(val, 4))
+		gb.cpu.hl.SetLo(setBit(gb.memoryBus.read(gb.cpu.hl.val), 4))
 	},
-	0xe7: func() {
+	0xe7: func(gb *Gameboy) {
 		// SET 4, A
-		gb.cpu.set8Reg(REG_A, setBit(gb.cpu.read8Reg(REG_A), 4))
+		gb.cpu.bc.SetHi(setBit(gb.cpu.bc.Hi(), 4))
 	},
-	0xe8: func() {
+	0xe8: func(gb *Gameboy) {
 		// SET 5, B
-		gb.cpu.set8Reg(REG_B, setBit(gb.cpu.read8Reg(REG_B), 5))
+		gb.cpu.bc.SetHi(setBit(gb.cpu.bc.Hi(), 5))
 	},
-	0xe9: func() {
+	0xe9: func(gb *Gameboy) {
 		// SET 5, C
-		gb.cpu.set8Reg(REG_C, setBit(gb.cpu.read8Reg(REG_C), 5))
+		gb.cpu.bc.SetLo(setBit(gb.cpu.bc.Lo(), 5))
 	},
-	0xea: func() {
+	0xea: func(gb *Gameboy) {
 		// SET 5, D
-		gb.cpu.set8Reg(REG_D, setBit(gb.cpu.read8Reg(REG_D), 5))
+		gb.cpu.de.SetHi(setBit(gb.cpu.de.Hi(), 5))
 	},
-	0xeb: func() {
+	0xeb: func(gb *Gameboy) {
 		// SET 5, E
-		gb.cpu.set8Reg(REG_E, setBit(gb.cpu.read8Reg(REG_E), 5))
+		gb.cpu.de.SetLo(setBit(gb.cpu.de.Lo(), 5))
 	},
-	0xec: func() {
+	0xec: func(gb *Gameboy) {
 		// SET 5, H
-		gb.cpu.set8Reg(REG_H, setBit(gb.cpu.read8Reg(REG_H), 5))
+		gb.cpu.hl.SetHi(setBit(gb.cpu.hl.Hi(), 5))
 	},
-	0xed: func() {
+	0xed: func(gb *Gameboy) {
 		// SET 5, L
-		gb.cpu.set8Reg(REG_L, setBit(gb.cpu.read8Reg(REG_L), 5))
+		gb.cpu.hl.SetLo(setBit(gb.cpu.hl.Lo(), 5))
 	},
-	0xee: func() {
+	0xee: func(gb *Gameboy) {
 		// SET 5, HL
-		hl := gb.cpu.read16Reg(REG_HL)
-		val := gb.bus.read(hl)
-		gb.bus.write(hl, setBit(val, 5))
+		gb.cpu.hl.SetLo(setBit(gb.memoryBus.read(gb.cpu.hl.val), 5))
 	},
-	0xef: func() {
+	0xef: func(gb *Gameboy) {
 		// SET 5, A
-		gb.cpu.set8Reg(REG_A, setBit(gb.cpu.read8Reg(REG_A), 5))
+		gb.cpu.bc.SetHi(setBit(gb.cpu.bc.Hi(), 5))
 	},
 
-	0xf0: func() {
+	0xf0: func(gb *Gameboy) {
 		// SET 6, B
-		gb.cpu.set8Reg(REG_B, setBit(gb.cpu.read8Reg(REG_B), 6))
+		gb.cpu.bc.SetHi(setBit(gb.cpu.bc.Hi(), 6))
 	},
-	0xf1: func() {
+	0xf1: func(gb *Gameboy) {
 		// SET 6, C
-		gb.cpu.set8Reg(REG_C, setBit(gb.cpu.read8Reg(REG_C), 6))
+		gb.cpu.bc.SetLo(setBit(gb.cpu.bc.Lo(), 6))
 	},
-	0xf2: func() {
+	0xf2: func(gb *Gameboy) {
 		// SET 6, D
-		gb.cpu.set8Reg(REG_D, setBit(gb.cpu.read8Reg(REG_D), 6))
+		gb.cpu.de.SetHi(setBit(gb.cpu.de.Hi(), 6))
 	},
-	0xf3: func() {
+	0xf3: func(gb *Gameboy) {
 		// SET 6, E
-		gb.cpu.set8Reg(REG_E, setBit(gb.cpu.read8Reg(REG_E), 6))
+		gb.cpu.de.SetLo(setBit(gb.cpu.de.Lo(), 6))
 	},
-	0xf4: func() {
+	0xf4: func(gb *Gameboy) {
 		// SET 6, H
-		gb.cpu.set8Reg(REG_H, setBit(gb.cpu.read8Reg(REG_H), 6))
+		gb.cpu.hl.SetHi(setBit(gb.cpu.hl.Hi(), 6))
 	},
-	0xf5: func() {
+	0xf5: func(gb *Gameboy) {
 		// SET 6, L
-		gb.cpu.set8Reg(REG_L, setBit(gb.cpu.read8Reg(REG_L), 6))
+		gb.cpu.hl.SetLo(setBit(gb.cpu.hl.Lo(), 6))
 	},
-	0xf6: func() {
+	0xf6: func(gb *Gameboy) {
 		// SET 6, HL
-		hl := gb.cpu.read16Reg(REG_HL)
-		val := gb.bus.read(hl)
-		gb.bus.write(hl, setBit(val, 6))
+		gb.cpu.hl.SetLo(setBit(gb.memoryBus.read(gb.cpu.hl.val), 6))
 	},
-	0xf7: func() {
+	0xf7: func(gb *Gameboy) {
 		// SET 6, A
-		gb.cpu.set8Reg(REG_A, setBit(gb.cpu.read8Reg(REG_A), 6))
+		gb.cpu.bc.SetHi(setBit(gb.cpu.bc.Hi(), 6))
 	},
-	0xf8: func() {
+	0xf8: func(gb *Gameboy) {
 		// SET 7, B
-		gb.cpu.set8Reg(REG_B, setBit(gb.cpu.read8Reg(REG_B), 7))
+		gb.cpu.bc.SetHi(setBit(gb.cpu.bc.Hi(), 7))
 	},
-	0xf9: func() {
+	0xf9: func(gb *Gameboy) {
 		// SET 7, C
-		gb.cpu.set8Reg(REG_C, setBit(gb.cpu.read8Reg(REG_C), 7))
+		gb.cpu.bc.SetLo(setBit(gb.cpu.bc.Lo(), 7))
 	},
-	0xfa: func() {
+	0xfa: func(gb *Gameboy) {
 		// SET 7, D
-		gb.cpu.set8Reg(REG_D, setBit(gb.cpu.read8Reg(REG_D), 7))
+		gb.cpu.de.SetHi(setBit(gb.cpu.de.Hi(), 7))
 	},
-	0xfb: func() {
+	0xfb: func(gb *Gameboy) {
 		// SET 7, E
-		gb.cpu.set8Reg(REG_E, setBit(gb.cpu.read8Reg(REG_E), 7))
+		gb.cpu.de.SetLo(setBit(gb.cpu.de.Lo(), 7))
 	},
-	0xfc: func() {
+	0xfc: func(gb *Gameboy) {
 		// SET 7, H
-		gb.cpu.set8Reg(REG_H, setBit(gb.cpu.read8Reg(REG_H), 7))
+		gb.cpu.hl.SetHi(setBit(gb.cpu.hl.Hi(), 7))
 	},
-	0xfd: func() {
+	0xfd: func(gb *Gameboy) {
 		// SET 7, L
-		gb.cpu.set8Reg(REG_L, setBit(gb.cpu.read8Reg(REG_L), 7))
+		gb.cpu.hl.SetLo(setBit(gb.cpu.hl.Lo(), 7))
 	},
-	0xfe: func() {
+	0xfe: func(gb *Gameboy) {
 		// SET 7, HL
-		hl := gb.cpu.read16Reg(REG_HL)
-		val := gb.bus.read(hl)
-		gb.bus.write(hl, setBit(val, 7))
+		gb.cpu.hl.SetLo(setBit(gb.memoryBus.read(gb.cpu.hl.val), 7))
 	},
-	0xff: func() {
+	0xff: func(gb *Gameboy) {
 		// SET 7, A
-		gb.cpu.set8Reg(REG_A, setBit(gb.cpu.read8Reg(REG_A), 7))
+		gb.cpu.bc.SetHi(setBit(gb.cpu.bc.Hi(), 7))
 	},
 }

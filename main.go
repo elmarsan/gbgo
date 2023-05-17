@@ -5,10 +5,10 @@ import (
 	"os"
 )
 
-// Create a new Gameboy instance
-var gb = NewGameboy()
-
 func main() {
+	// Create a new Gameboy instance
+	gb := NewGameboy()
+
 	// debug stuff
 	debug.init()
 
@@ -27,7 +27,7 @@ func main() {
 		gb.Run()
 	}()
 
-	app := NewApp()
+	app := NewApp(gb)
 
 	if err := app.Run(); err != nil {
 		log.Fatal(err)

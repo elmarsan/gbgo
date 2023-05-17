@@ -12,11 +12,13 @@ const (
 )
 
 type App struct {
+	gb         *Gameboy
 	keyHandler map[ebiten.Key]func(pressed bool)
 }
 
-func NewApp() *App {
+func NewApp(gb *Gameboy) *App {
 	return &App{
+		gb: gb,
 		keyHandler: map[ebiten.Key]func(pressed bool){
 			ebiten.KeyW: func(pressed bool) { gb.joypad.Up = pressed },
 			ebiten.KeyS: func(pressed bool) { gb.joypad.Down = pressed },
@@ -46,7 +48,7 @@ func (a *App) Update() error {
 }
 
 func (a *App) Draw(screen *ebiten.Image) {
-	imgRGBA := a.createImgRGBA(gb.ppu.videoBuf[:])
+	imgRGBA := a.createImgRGBA(a.gb.ppu.videoBuf[:])
 	img := ebiten.NewImageFromImage(imgRGBA)
 
 	drawopts := &ebiten.DrawImageOptions{}

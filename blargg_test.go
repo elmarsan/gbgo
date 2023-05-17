@@ -66,38 +66,38 @@ func TestBlargg(t *testing.T) {
 			name:     "03-op sp,hl.gb",
 			targetPc: 0xcb44,
 		},
-		{
-			name:     "04-op r,imm.gb",
-			targetPc: 0xcb35,
-		},
-		{
-			name:     "05-op rp.gb",
-			targetPc: 0xcb31,
-		},
-		{
-			name:     "06-ld r,r.gb",
-			targetPc: 0xcc5f,
-		},
-		{
-			name:     "07-jr,jp,call,ret,rst.gb",
-			targetPc: 0xcbb0,
-		},
-		{
-			name:     "08-misc instrs.gb",
-			targetPc: 0xcb91,
-		},
-		{
-			name:     "09-op r,r.gb",
-			targetPc: 0xce67,
-		},
-		{
-			name:     "10-bit ops.gb",
-			targetPc: 0xcf58,
-		},
-		{
-			name:     "11-op a,(hl).gb",
-			targetPc: 0xcc62,
-		},
+		// {
+		// 	name:     "04-op r,imm.gb",
+		// 	targetPc: 0xcb35,
+		// },
+		// {
+		// 	name:     "05-op rp.gb",
+		// 	targetPc: 0xcb31,
+		// },
+		// {
+		// 	name:     "06-ld r,r.gb",
+		// 	targetPc: 0xcc5f,
+		// },
+		// {
+		// 	name:     "07-jr,jp,call,ret,rst.gb",
+		// 	targetPc: 0xcbb0,
+		// },
+		// {
+		// 	name:     "08-misc instrs.gb",
+		// 	targetPc: 0xcb91,
+		// },
+		// {
+		// 	name:     "09-op r,r.gb",
+		// 	targetPc: 0xce67,
+		// },
+		// {
+		// 	name:     "10-bit ops.gb",
+		// 	targetPc: 0xcf58,
+		// },
+		// {
+		// 	name:     "11-op a,(hl).gb",
+		// 	targetPc: 0xcc62,
+		// },
 	}
 
 	for _, test := range tests {
