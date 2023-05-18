@@ -91,6 +91,7 @@ func (gb *Gameboy) step() {
 		gb.execute()
 	} else {
 		if gb.interruptBus.pending() {
+			gb.cpu.halted = false
 		} else {
 			gb.cpu.clockCycles += 4
 		}
@@ -112,8 +113,6 @@ func (gb *Gameboy) step() {
 
 // execute fetchs next opcode and executes the corresponding instruction.
 func (gb *Gameboy) execute() {
-	debug.logState(gb)
-
 	gb.cpu.clockCycles = 0
 	pc := gb.cpu.readPc()
 	opcode := gb.memoryBus.read(pc)

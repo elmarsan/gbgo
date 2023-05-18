@@ -212,7 +212,7 @@ func sra(gb *Gameboy, val uint8) uint8 {
 	gb.cpu.setN(false)
 	gb.cpu.setZ(rot == 0)
 
-	return val
+	return rot
 }
 
 // sla performs SLA instruction in register a.
@@ -287,9 +287,9 @@ func rrc(gb *Gameboy, val uint8) uint8 {
 	return rot
 }
 
-// add8 adds val to register a.
+// add adds val to register a.
 // It stores in a register a (a + val) and sets flags.
-func add8(gb *Gameboy, reg uint8, val uint8) uint8 {
+func add(gb *Gameboy, reg uint8, val uint8) uint8 {
 	add := reg + val
 
 	gb.cpu.setC((uint16(reg) + uint16(val)) > 0xff)

@@ -12,14 +12,14 @@ func TestCPU(t *testing.T) {
 	cpu := &CPU{}
 
 	t.Run("Read flags", func(t *testing.T) {
-		cpu.f = 0b10010010
+		cpu.af.val = 0b10010010
 
 		assert.True(cpu.C(), "Error reading C flag")
 		assert.False(cpu.H(), "Error reading H flag")
 		assert.False(cpu.N(), "Error reading N flag")
 		assert.True(cpu.Z(), "Error reading Z flag")
 
-		cpu.f = 0b1100010
+		cpu.af.val = 0b1100010
 
 		assert.False(cpu.C(), "Error reading C flag")
 		assert.True(cpu.H(), "Error reading H flag")
@@ -28,7 +28,7 @@ func TestCPU(t *testing.T) {
 	})
 
 	t.Run("Set flags", func(t *testing.T) {
-		cpu.f = 0
+		cpu.af.val = 0
 		cpu.setC(true)
 		cpu.setH(true)
 		cpu.setN(true)
@@ -39,7 +39,7 @@ func TestCPU(t *testing.T) {
 		assert.True(cpu.N(), "Unable to turn on N flag")
 		assert.True(cpu.Z(), "Unable to turn on Z flag")
 
-		cpu.f = 0xff
+		cpu.af.val = 0xff
 		cpu.setC(false)
 		cpu.setH(false)
 		cpu.setN(false)

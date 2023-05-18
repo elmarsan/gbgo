@@ -119,7 +119,7 @@ var instructions = [0x100]func(gb *Gameboy){
 	},
 	0x15: func(gb *Gameboy) {
 		// DEC D
-		d := dec(gb, gb.cpu.de.Lo())
+		d := dec(gb, gb.cpu.de.Hi())
 		gb.cpu.de.SetHi(d)
 	},
 	0x16: func(gb *Gameboy) {
@@ -287,7 +287,7 @@ var instructions = [0x100]func(gb *Gameboy){
 		// LD L, d8
 		addr := gb.cpu.readPc()
 		val := gb.memoryBus.read(addr)
-		gb.cpu.hl.SetHi(val)
+		gb.cpu.hl.SetLo(val)
 	},
 	0x2f: func(gb *Gameboy) {
 		// CPL
@@ -322,7 +322,7 @@ var instructions = [0x100]func(gb *Gameboy){
 	},
 	0x33: func(gb *Gameboy) {
 		// INC SP
-		gb.cpu.sp = gb.cpu.sp + 1
+		gb.cpu.sp++
 	},
 	0x34: func(gb *Gameboy) {
 		// INC (HL)
@@ -371,7 +371,7 @@ var instructions = [0x100]func(gb *Gameboy){
 	},
 	0x39: func(gb *Gameboy) {
 		// ADD HL, SP
-		gb.cpu.hl.Set(gb.cpu.sp)
+		gb.cpu.hl.Set(add16(gb, gb.cpu.hl.val, gb.cpu.sp))
 	},
 	0x3a: func(gb *Gameboy) {
 		// LD A, (HL-)
@@ -382,7 +382,7 @@ var instructions = [0x100]func(gb *Gameboy){
 	},
 	0x3b: func(gb *Gameboy) {
 		// DEC SP
-		gb.cpu.sp = gb.cpu.sp - 1
+		gb.cpu.sp--
 	},
 	0x3c: func(gb *Gameboy) {
 		// INC A
@@ -502,27 +502,27 @@ var instructions = [0x100]func(gb *Gameboy){
 	},
 	0x58: func(gb *Gameboy) {
 		// LD E, B
-		gb.cpu.de.SetHi(gb.cpu.bc.Hi())
+		gb.cpu.de.SetLo(gb.cpu.bc.Hi())
 	},
 	0x59: func(gb *Gameboy) {
 		// LD E, C
-		gb.cpu.de.SetHi(gb.cpu.bc.Lo())
+		gb.cpu.de.SetLo(gb.cpu.bc.Lo())
 	},
 	0x5a: func(gb *Gameboy) {
 		// LD E, D
-		gb.cpu.de.SetHi(gb.cpu.de.Hi())
+		gb.cpu.de.SetLo(gb.cpu.de.Hi())
 	},
 	0x5b: func(gb *Gameboy) {
 		// LD E, E
-		gb.cpu.de.SetHi(gb.cpu.de.Hi())
+		gb.cpu.de.SetLo(gb.cpu.de.Lo())
 	},
 	0x5c: func(gb *Gameboy) {
 		// LD E, H
-		gb.cpu.de.SetHi(gb.cpu.hl.Hi())
+		gb.cpu.de.SetLo(gb.cpu.hl.Hi())
 	},
 	0x5d: func(gb *Gameboy) {
 		// LD E, L
-		gb.cpu.de.SetHi(gb.cpu.hl.Lo())
+		gb.cpu.de.SetLo(gb.cpu.hl.Lo())
 	},
 	0x5e: func(gb *Gameboy) {
 		// LD E, (HL)
@@ -662,42 +662,42 @@ var instructions = [0x100]func(gb *Gameboy){
 	},
 	0x80: func(gb *Gameboy) {
 		// ADD A, B
-		a := add8(gb, gb.cpu.af.Hi(), gb.cpu.bc.Hi())
+		a := add(gb, gb.cpu.af.Hi(), gb.cpu.bc.Hi())
 		gb.cpu.af.SetHi(a)
 	},
 	0x81: func(gb *Gameboy) {
 		// ADD A, C
-		a := add8(gb, gb.cpu.af.Hi(), gb.cpu.bc.Lo())
+		a := add(gb, gb.cpu.af.Hi(), gb.cpu.bc.Lo())
 		gb.cpu.af.SetHi(a)
 	},
 	0x82: func(gb *Gameboy) {
 		// ADD A, D
-		a := add8(gb, gb.cpu.af.Hi(), gb.cpu.de.Hi())
+		a := add(gb, gb.cpu.af.Hi(), gb.cpu.de.Hi())
 		gb.cpu.af.SetHi(a)
 	},
 	0x83: func(gb *Gameboy) {
 		// ADD A, E
-		a := add8(gb, gb.cpu.af.Hi(), gb.cpu.de.Lo())
+		a := add(gb, gb.cpu.af.Hi(), gb.cpu.de.Lo())
 		gb.cpu.af.SetHi(a)
 	},
 	0x84: func(gb *Gameboy) {
 		// ADD A, H
-		a := add8(gb, gb.cpu.af.Hi(), gb.cpu.hl.Hi())
+		a := add(gb, gb.cpu.af.Hi(), gb.cpu.hl.Hi())
 		gb.cpu.af.SetHi(a)
 	},
 	0x85: func(gb *Gameboy) {
 		// ADD A, L
-		a := add8(gb, gb.cpu.af.Hi(), gb.cpu.hl.Lo())
+		a := add(gb, gb.cpu.af.Hi(), gb.cpu.hl.Lo())
 		gb.cpu.af.SetHi(a)
 	},
 	0x86: func(gb *Gameboy) {
 		// ADD A, HL
-		a := add8(gb, gb.cpu.af.Hi(), gb.memoryBus.read(gb.cpu.hl.val))
+		a := add(gb, gb.cpu.af.Hi(), gb.memoryBus.read(gb.cpu.hl.val))
 		gb.cpu.af.SetHi(a)
 	},
 	0x87: func(gb *Gameboy) {
 		// ADD A, A
-		a := add8(gb, gb.cpu.af.Hi(), gb.cpu.af.Hi())
+		a := add(gb, gb.cpu.af.Hi(), gb.cpu.af.Hi())
 		gb.cpu.af.SetHi(a)
 	},
 	0x88: func(gb *Gameboy) {
@@ -727,7 +727,7 @@ var instructions = [0x100]func(gb *Gameboy){
 	},
 	0x8d: func(gb *Gameboy) {
 		// ADC A, L
-		a := adc(gb, gb.cpu.af.Hi(), gb.memoryBus.read(gb.cpu.hl.val))
+		a := adc(gb, gb.cpu.af.Hi(), gb.cpu.hl.Lo())
 		gb.cpu.af.SetHi(a)
 	},
 	0x8e: func(gb *Gameboy) {
@@ -747,7 +747,7 @@ var instructions = [0x100]func(gb *Gameboy){
 	},
 	0x91: func(gb *Gameboy) {
 		// SUB C
-		a := sub(gb, gb.cpu.af.Hi(), gb.cpu.bc.Hi())
+		a := sub(gb, gb.cpu.af.Hi(), gb.cpu.bc.Lo())
 		gb.cpu.af.SetHi(a)
 	},
 	0x92: func(gb *Gameboy) {
@@ -787,7 +787,7 @@ var instructions = [0x100]func(gb *Gameboy){
 	},
 	0x99: func(gb *Gameboy) {
 		// SBC A, C
-		a := sbc(gb, gb.cpu.af.Hi(), gb.cpu.bc.Hi())
+		a := sbc(gb, gb.cpu.af.Hi(), gb.cpu.bc.Lo())
 		gb.cpu.af.SetHi(a)
 	},
 	0x9a: func(gb *Gameboy) {
@@ -985,7 +985,7 @@ var instructions = [0x100]func(gb *Gameboy){
 
 		if !gb.cpu.Z() {
 			addr := joinu8(msb, lsb)
-			jump(gb, addr)
+			call(gb, addr)
 			gb.cpu.clockCycles += 12
 		}
 	},
@@ -995,7 +995,7 @@ var instructions = [0x100]func(gb *Gameboy){
 	},
 	0xc6: func(gb *Gameboy) {
 		// ADD A, d8
-		a := add8(gb, gb.cpu.af.Hi(), gb.memoryBus.read(gb.cpu.readPc()))
+		a := add(gb, gb.cpu.af.Hi(), gb.memoryBus.read(gb.cpu.readPc()))
 		gb.cpu.af.SetHi(a)
 	},
 	0xc7: func(gb *Gameboy) {
@@ -1205,8 +1205,7 @@ var instructions = [0x100]func(gb *Gameboy){
 	},
 	0xf1: func(gb *Gameboy) {
 		// POP AF
-		gb.cpu.af.Set(gb.popSp())
-		gb.cpu.af.Set(gb.cpu.af.val & 0xfff0)
+		gb.cpu.af.Set(gb.popSp() & 0xfff0)
 	},
 	0xf2: func(gb *Gameboy) {
 		// LD A, (C)
@@ -1259,6 +1258,7 @@ var instructions = [0x100]func(gb *Gameboy){
 		gb.interruptBus.enablingIme = true
 	},
 	0xfe: func(gb *Gameboy) {
+		// CP d8
 		cp(gb, gb.memoryBus.read(gb.cpu.readPc()))
 	},
 	0xff: func(gb *Gameboy) {
