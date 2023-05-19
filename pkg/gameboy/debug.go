@@ -1,4 +1,4 @@
-package main
+package gameboy
 
 import (
 	"fmt"
@@ -32,7 +32,7 @@ func (d *Debug) init() {
 }
 
 func (d *Debug) logState(gb *Gameboy) {
-	state := fmt.Sprintf("A:%02X F:%02X B:%02X C:%02X D:%02X E:%02X H:%02X L:%02X SP:%04X PC:%04X PCMEM:%02X,%02X,%02X,%02X",
+	state := fmt.Sprintf("A:%02X F:%02X B:%02X C:%02X D:%02X E:%02X H:%02X L:%02X sp:%04X pc:%04X pcMEM:%02X,%02X,%02X,%02X",
 		gb.cpu.af.Hi(), gb.cpu.af.Lo(), gb.cpu.bc.Hi(), gb.cpu.bc.Lo(), gb.cpu.de.Hi(), gb.cpu.de.Lo(), gb.cpu.hl.Hi(),
 		gb.cpu.hl.Lo(), gb.cpu.sp, gb.cpu.pc, gb.memoryBus.read(gb.cpu.pc), gb.memoryBus.read(gb.cpu.pc+1), gb.memoryBus.read(gb.cpu.pc+2), gb.memoryBus.read(gb.cpu.pc+3))
 

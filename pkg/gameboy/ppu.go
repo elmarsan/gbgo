@@ -1,9 +1,11 @@
-package main
+package gameboy
 
-// PPU represents game boy pixel processing unit.
-type PPU struct {
-	// videoBuf contains LCD pixels with palette index values.
-	videoBuf [GB_W * GB_H]uint8
+import "github.com/elmarsan/gbgo/pkg/bit"
+
+// ppu represents game boy pixel processing unit.
+type ppu struct {
+	// videoBuffer contains LCD pixels with palette index values.
+	videoBuffer [ScreenWidth * ScreenHeight]uint8
 
 	// vBlankClockCycles is used to track vBlank mode.
 	vBlankClockCycles int
@@ -26,51 +28,51 @@ type PPU struct {
 	vblankLine int
 
 	// memoryBus represents memory memoryBus used by Gameboy.
-	memoryBus *MemoryBus
+	memoryBus *memoryBus
 
 	// InterruptBus represents the interruption system of game boy.
-	interruptBus *InterruptBus
+	interruptBus *interruptBus
 }
 
 const (
-	LCDC = 0xff40 // LCD control
-	STAT = 0xff41 // LCD status
-	SCY  = 0xff42 // Viewport Y position
-	SCX  = 0xff43 // Viewport X position
-	WY   = 0xff4a // Window Y position
-	WX   = 0xff4b // Window X position
-	LY   = 0xff44 // LCD Y coordinate
-	LYC  = 0xff45 // LY compare
-	BGP  = 0xff47 // Background palette
-	OBP0 = 0xff48 // Object palette 0
-	OBP1 = 0xff49 // Object palette 0
+	lcdc = 0xff40 // LCD control
+	stat = 0xff41 // LCD status
+	scy  = 0xff42 // Viewport Y position
+	scx  = 0xff43 // Viewport X position
+	wy   = 0xff4a // Window Y position
+	wx   = 0xff4b // Window X position
+	ly   = 0xff44 // LCD Y coordinate
+	lyc  = 0xff45 // LY compare
+	bgp  = 0xff47 // Background palette
+	obp0 = 0xff48 // Object palette 0
+	obp1 = 0xff49 // Object palette 0
 
-	GB_W = 160 // Game boy screen width
-	GB_H = 144 // Game boy screen height
+	ScreenWidth  = 160 // Game boy screen width
+	ScreenHeight = 144 // Game boy screen height
 )
 
 const (
-	HBLANK_MODE   = iota // MODE 0 HBLANK
-	VBLANK_MODE          // MODE 1 VBLANK
-	OAM_SCAN_MODE        // MODE 2 OAM SCAN
-	DRAW_MODE            // MODE 3 DRAWING PIXELS
+	hblank   = iota // MODE 0 HBLANK
+	vblank          // MODE 1 VBLANK
+	oamScan         // MODE 2 OAM SCAN
+	drawMode        // MODE 3 DRAWING PIXELS
 )
 
-// NewPPU creates and returns a new PPU instance.
+// newPpu creates and returns a new ppu instance.
 // Ppu members are set defaults of DMG boot sequence.
-func NewPPU(memoryBus *MemoryBus, irBus *InterruptBus) *PPU {
-	videoBuf := [GB_W * GB_H]uint8{}
+func newPpu(memoryBus *memoryBus, irBus *interruptBus) *ppu {
+	videoBuf := [ScreenWidth * ScreenHeight]uint8{}
 
 	// Set all pixels to palette index 0
 	for i := 0; i < len(videoBuf); i++ {
 		videoBuf[i] = 0
 	}
 
-	return &PPU{
-		videoBuf:          videoBuf,
+	return &ppu{
+		videoBuffer:       videoBuf,
 		vBlankClockCycles: 0,
 		statusClockCycles: 0,
-		// PPU starts in VBLANK mode
+		// ppu starts in VBLANK mode
 		statusMode: 1,
 		// First scanline line must be 144
 		scanline:     144,
@@ -81,10 +83,10 @@ func NewPPU(memoryBus *MemoryBus, irBus *InterruptBus) *PPU {
 }
 
 // Ticks emulates ppu ticks.
-func (ppu *PPU) Tick(clockCycles int) {
-	lcdc := ppu.memoryBus.read(LCDC)
+func (ppu *ppu) tick(clockCycles int) {
+	lcdc := ppu.memoryBus.read(lcdc)
 
-	if !isBitSet(lcdc, 7) {
+	if !bit.IsSet(lcdc, 7) {
 		return
 	}
 
@@ -92,31 +94,31 @@ func (ppu *PPU) Tick(clockCycles int) {
 
 	switch ppu.statusMode {
 
-	case HBLANK_MODE:
+	case hblank:
 		if ppu.statusClockCycles >= 204 {
 			ppu.statusClockCycles -= 204
-			ppu.updateStatusMode(OAM_SCAN_MODE)
+			ppu.updateStatusMode(oamScan)
 			ppu.scanline++
-			ppu.memoryBus.write(LY, ppu.scanline)
+			ppu.memoryBus.write(ly, ppu.scanline)
 			ppu.compareLY()
 
 			// Vblank mode starts
 			if ppu.scanline == 144 {
-				ppu.updateStatusMode(VBLANK_MODE)
+				ppu.updateStatusMode(vblank)
 
-				stat := ppu.memoryBus.read(STAT)
-				if isBitSet(stat, 4) {
-					ppu.interruptBus.request(IT_LCD_STAT)
+				stat := ppu.memoryBus.read(stat)
+				if bit.IsSet(stat, 4) {
+					ppu.interruptBus.request(lcdStatInterrupt)
 				}
 			} else {
-				stat := ppu.memoryBus.read(STAT)
-				if isBitSet(stat, 5) {
-					ppu.interruptBus.request(IT_LCD_STAT)
+				stat := ppu.memoryBus.read(stat)
+				if bit.IsSet(stat, 5) {
+					ppu.interruptBus.request(lcdStatInterrupt)
 				}
 			}
 		}
 
-	case VBLANK_MODE:
+	case vblank:
 		ppu.vBlankClockCycles += clockCycles
 
 		if ppu.vBlankClockCycles >= 456 {
@@ -125,44 +127,44 @@ func (ppu *PPU) Tick(clockCycles int) {
 
 			if ppu.vblankLine <= 9 {
 				ppu.scanline++
-				ppu.memoryBus.write(LY, ppu.scanline)
+				ppu.memoryBus.write(ly, ppu.scanline)
 				ppu.compareLY()
 			}
 		}
 
 		if (ppu.statusClockCycles >= 4104) && (ppu.vBlankClockCycles >= 4) && (ppu.scanline == 153) {
 			ppu.scanline = 0
-			ppu.memoryBus.write(LY, ppu.scanline)
+			ppu.memoryBus.write(ly, ppu.scanline)
 			ppu.compareLY()
 		}
 
 		// Vblank mode ends
 		if ppu.statusClockCycles >= 4560 {
 			ppu.statusClockCycles -= 4560
-			ppu.updateStatusMode(OAM_SCAN_MODE)
+			ppu.updateStatusMode(oamScan)
 
-			stat := ppu.memoryBus.read(STAT)
-			if isBitSet(stat, 5) {
-				ppu.interruptBus.request(IT_LCD_STAT)
+			stat := ppu.memoryBus.read(stat)
+			if bit.IsSet(stat, 5) {
+				ppu.interruptBus.request(lcdStatInterrupt)
 			}
 		}
 
-	case OAM_SCAN_MODE:
+	case oamScan:
 		if ppu.statusClockCycles >= 80 {
 			ppu.statusClockCycles -= 80
-			ppu.updateStatusMode(DRAW_MODE)
+			ppu.updateStatusMode(drawMode)
 		}
 
-	case DRAW_MODE:
+	case drawMode:
 		if ppu.statusClockCycles >= 172 {
 			ppu.statusClockCycles -= 172
 
 			ppu.renderScanline()
-			ppu.updateStatusMode(HBLANK_MODE)
+			ppu.updateStatusMode(hblank)
 
-			stat := ppu.memoryBus.read(STAT)
-			if isBitSet(stat, 3) {
-				ppu.interruptBus.request(IT_LCD_STAT)
+			stat := ppu.memoryBus.read(stat)
+			if bit.IsSet(stat, 3) {
+				ppu.interruptBus.request(lcdStatInterrupt)
 			}
 		}
 	}
@@ -171,39 +173,39 @@ func (ppu *PPU) Tick(clockCycles int) {
 // updateStatusMode updates status mode.
 // If the mode is VBLANK_MODE, it sets the vblankLine to 0, sets the vBlankClockCycles to the current statusClockCycles,
 // and requests a VBLANK interrupt.
-func (ppu *PPU) updateStatusMode(mode int) {
+func (ppu *ppu) updateStatusMode(mode int) {
 	ppu.statusMode = mode
-	stat := ppu.memoryBus.read(STAT)
-	ppu.memoryBus.write(STAT, uint8(stat&0xfc)|uint8(ppu.statusMode&0x3))
+	statVal := ppu.memoryBus.read(stat)
+	ppu.memoryBus.write(stat, uint8(statVal&0xfc)|uint8(ppu.statusMode&0x3))
 
-	if mode == VBLANK_MODE {
+	if mode == vblank {
 		ppu.vblankLine = 0
 		ppu.vBlankClockCycles = ppu.statusClockCycles
-		ppu.interruptBus.request(IT_VBLANK)
+		ppu.interruptBus.request(lcdStatInterrupt)
 	}
 }
 
 // renderScanline renders scanline into videobuf.
-func (ppu *PPU) renderScanline() {
-	lcdc := ppu.memoryBus.read(LCDC)
+func (ppu *ppu) renderScanline() {
+	lcdc := ppu.memoryBus.read(lcdc)
 
-	if isBitSet(lcdc, 0) {
+	if bit.IsSet(lcdc, 0) {
 		ppu.renderTiles()
 	}
 
-	if isBitSet(lcdc, 1) {
+	if bit.IsSet(lcdc, 1) {
 		ppu.renderSprites()
 	}
 }
 
 // renderTiles render tiles into videoBuf.
-func (ppu *PPU) renderTiles() {
-	lcdc := ppu.memoryBus.read(LCDC)
-	scx := ppu.memoryBus.read(SCX)
-	scy := ppu.memoryBus.read(SCY)
-	wx := int(ppu.memoryBus.read(WX)) - 7
-	wy := ppu.memoryBus.read(WY)
-	palette := ppu.memoryBus.read(BGP)
+func (ppu *ppu) renderTiles() {
+	lcdc := ppu.memoryBus.read(lcdc)
+	scx := ppu.memoryBus.read(scx)
+	scy := ppu.memoryBus.read(scy)
+	wx := int(ppu.memoryBus.read(wx)) - 7
+	wy := ppu.memoryBus.read(wy)
+	palette := ppu.memoryBus.read(bgp)
 
 	tileData, tileMap := ppu.getTileDataAndTileMap()
 
@@ -213,7 +215,7 @@ func (ppu *PPU) renderTiles() {
 	)
 
 	window := false
-	if isBitSet(lcdc, 5) && wy <= ppu.scanline {
+	if bit.IsSet(lcdc, 5) && wy <= ppu.scanline {
 		window = true
 		yPos = ppu.scanline
 		tileRow = (uint16(yPos) / 8) * 32
@@ -251,7 +253,7 @@ func (ppu *PPU) renderTiles() {
 				pixel = uint8(mapOffsetX) + bit - scx
 			}
 
-			if pixel >= GB_W || ppu.scanline > 144 {
+			if pixel >= ScreenWidth || ppu.scanline > 144 {
 				continue
 			}
 
@@ -263,28 +265,28 @@ func (ppu *PPU) renderTiles() {
 				colorIndex |= 2
 			}
 
-			lineWidth := uint(ppu.scanline) * GB_W
+			lineWidth := uint(ppu.scanline) * ScreenWidth
 			position := lineWidth + uint(pixel)
 			color := (palette >> (colorIndex * 2)) & 0x03
-			ppu.videoBuf[position] = color
+			ppu.videoBuffer[position] = color
 		}
 	}
 }
 
 // getTileDataAndTileMap returns vram tile data and vram tile map based on LCDC.
-func (ppu *PPU) getTileDataAndTileMap() (uint16, uint16) {
-	lcdc := ppu.memoryBus.read(LCDC)
+func (ppu *ppu) getTileDataAndTileMap() (uint16, uint16) {
+	lcdc := ppu.memoryBus.read(lcdc)
 
 	var (
 		data uint16 = 0x8800
 		addr uint16 = 0x9800
 	)
 
-	if isBitSet(lcdc, 4) {
+	if bit.IsSet(lcdc, 4) {
 		data = 0x8000
 	}
 
-	if isBitSet(lcdc, 3) {
+	if bit.IsSet(lcdc, 3) {
 		addr = 0x9C00
 	}
 
@@ -292,16 +294,16 @@ func (ppu *PPU) getTileDataAndTileMap() (uint16, uint16) {
 }
 
 // renderSprites render sprites into videoBuf.
-func (ppu *PPU) renderSprites() {
+func (ppu *ppu) renderSprites() {
 	var (
-		lcdc     = ppu.memoryBus.read(LCDC)
-		palette0 = ppu.memoryBus.read(OBP0)
-		palette1 = ppu.memoryBus.read(OBP1)
+		lcdc     = ppu.memoryBus.read(lcdc)
+		palette0 = ppu.memoryBus.read(obp0)
+		palette1 = ppu.memoryBus.read(obp1)
 	)
 
 	// Get sprite height
 	var ySize int32 = 8
-	if isBitSet(lcdc, 2) {
+	if bit.IsSet(lcdc, 2) {
 		ySize = 16
 	}
 
@@ -319,8 +321,8 @@ func (ppu *PPU) renderSprites() {
 
 		// Sprite flags
 		// TODO: check xFlip and priority
-		palette := isBitSet(flags, 4)
-		yFlip := isBitSet(flags, 6)
+		palette := bit.IsSet(flags, 4)
+		yFlip := bit.IsSet(flags, 6)
 
 		line := int32(ppu.scanline) - yPos
 		if yFlip {
@@ -334,7 +336,7 @@ func (ppu *PPU) renderSprites() {
 		for tilePixel := uint8(0); tilePixel < 8; tilePixel++ {
 			pixel := int16(xPos) + int16(7-tilePixel)
 
-			if pixel < 0 || pixel >= GB_W {
+			if pixel < 0 || pixel >= ScreenWidth {
 				continue
 			}
 
@@ -355,26 +357,26 @@ func (ppu *PPU) renderSprites() {
 				spritePalette = palette1
 			}
 
-			lineWidth := uint(ppu.scanline) * GB_W
+			lineWidth := uint(ppu.scanline) * ScreenWidth
 			position := lineWidth + uint(pixel)
 			color := (spritePalette >> (colorIndex * 2)) & 0x03
-			ppu.videoBuf[position] = color
+			ppu.videoBuffer[position] = color
 		}
 	}
 }
 
 // compareLY compares LY and LYC
-func (ppu *PPU) compareLY() {
-	lyc := ppu.memoryBus.read(LYC)
-	status := ppu.memoryBus.read(STAT)
+func (ppu *ppu) compareLY() {
+	lyc := ppu.memoryBus.read(lyc)
+	status := ppu.memoryBus.read(stat)
 
 	if ppu.scanline == lyc {
-		ppu.memoryBus.write(STAT, setBit(status, 2))
+		ppu.memoryBus.write(stat, bit.Set(status, 2))
 
-		if isBitSet(ppu.memoryBus.read(STAT), 6) {
-			ppu.interruptBus.request(IT_LCD_STAT)
+		if bit.IsSet(ppu.memoryBus.read(stat), 6) {
+			ppu.interruptBus.request(lcdStatInterrupt)
 		}
 	} else {
-		ppu.memoryBus.write(STAT, clearBit(status, 2))
+		ppu.memoryBus.write(stat, bit.Clear(status, 2))
 	}
 }

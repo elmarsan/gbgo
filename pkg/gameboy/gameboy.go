@@ -1,4 +1,4 @@
-package main
+package gameboy
 
 import (
 	"log"
@@ -13,39 +13,41 @@ type Gameboy struct {
 	stopCh chan struct{}
 
 	// cpu represents the central processing unit used by Gameboy.
-	cpu *CPU
+	cpu *cpu
 
-	// memoryBus represents memory memoryBus used by Gameboy.
-	memoryBus *MemoryBus
+	// MemoryBus represents memory MemoryBus used by Gameboy.
+	memoryBus *memoryBus
 
 	// ppu represents pixel processing unit user by Gameboy.
-	ppu *PPU
+	ppu *ppu
 
 	// timer represents the timer of Gameboy.
-	timer *Timer
+	timer *timer
 
 	// cartridge represents the external piece of hardware that contains game data.
-	cartridge *Cartridge
+	cartridge *cartridge
 
-	// joypad represents physycal buttons of Gameboy.
-	joypad *Joypad
+	// Joypad represents physycal buttons of Gameboy.
+	Joypad *Joypad
 
 	// InterruptBus represents the interruption system of game boy.
-	interruptBus *InterruptBus
+	interruptBus *interruptBus
 }
 
-// NewGameboy creates and returns a new Gameboy instance.
-func NewGameboy() *Gameboy {
-	cartridge := &Cartridge{}
+// New creates and returns a new Gameboy instance.
+func New() *Gameboy {
+	cartridge := &cartridge{}
 	joypad := &Joypad{}
 
-	memoryBus := NewMemoryBus(cartridge, joypad)
-	interruptBus := NewInterruptBus(memoryBus)
+	memoryBus := newMemoryBus(cartridge, joypad)
+	interruptBus := newInterruptBus(memoryBus)
 
-	cpu := NewCPU(memoryBus)
-	ppu := NewPPU(memoryBus, interruptBus)
+	cpu := newCpu(memoryBus)
+	ppu := newPpu(memoryBus, interruptBus)
 
-	timer := NewTimer(memoryBus, interruptBus)
+	timer := newTimer(memoryBus, interruptBus)
+
+	debug.init()
 
 	return &Gameboy{
 		paused:       false,
@@ -55,7 +57,7 @@ func NewGameboy() *Gameboy {
 		ppu:          ppu,
 		timer:        timer,
 		cartridge:    cartridge,
-		joypad:       joypad,
+		Joypad:       joypad,
 		interruptBus: interruptBus,
 	}
 }
@@ -84,7 +86,12 @@ func (gb *Gameboy) Stop() {
 	gb.stopCh <- struct{}{}
 }
 
-// step executes the next instruction in the CPU, updates the PPU and timer,
+// GetVideoBuffer returns ppu video buffer.
+func (gb *Gameboy) GetVideoBuffer() []uint8 {
+	return gb.ppu.videoBuffer[:]
+}
+
+// step executes the next instruction in the cpu, updates the ppu and timer,
 // and handles interrupts
 func (gb *Gameboy) step() {
 	if !gb.cpu.halted {
@@ -99,7 +106,7 @@ func (gb *Gameboy) step() {
 
 	if gb.interruptBus.ime && gb.interruptBus.pending() {
 		call(gb, gb.interruptBus.locateISR())
-		gb.cpu.clockCycles += ISRClockCycles
+		gb.cpu.clockCycles += isrClockCycles
 	}
 
 	if gb.interruptBus.enablingIme {
@@ -107,24 +114,26 @@ func (gb *Gameboy) step() {
 		gb.interruptBus.enablingIme = false
 	}
 
-	gb.ppu.Tick(gb.cpu.clockCycles)
-	gb.timer.Tick(gb.cpu.clockCycles)
+	gb.ppu.tick(gb.cpu.clockCycles)
+	gb.timer.tick(gb.cpu.clockCycles)
 }
 
 // execute fetchs next opcode and executes the corresponding instruction.
 func (gb *Gameboy) execute() {
+	// debug.logState(gb)
+
 	gb.cpu.clockCycles = 0
-	pc := gb.cpu.readPc()
+	pc := gb.cpu.ReadPc()
 	opcode := gb.memoryBus.read(pc)
 
 	if opcode == 0xcb {
-		pc := gb.cpu.readPc()
-		opcode := gb.memoryBus.read(pc)
-		prefixedInstructions[opcode](gb)
-		gb.cpu.clockCycles += cbInstructionCycles[opcode] * 4
+		pc := gb.cpu.ReadPc()
+		cbCode := gb.memoryBus.read(pc)
+		cbInstr[cbCode](gb)
+		gb.cpu.clockCycles += cbCycle[cbCode] * 4
 	} else {
-		instructions[opcode](gb)
-		gb.cpu.clockCycles += instructionCycles[opcode] * 4
+		instr[opcode](gb)
+		gb.cpu.clockCycles += instrCycle[opcode] * 4
 	}
 }
 

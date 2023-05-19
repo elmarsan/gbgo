@@ -1,4 +1,4 @@
-package main
+package gameboy
 
 import (
 	"testing"
@@ -9,9 +9,9 @@ import (
 func TestCPU(t *testing.T) {
 	assert := assert.New(t)
 
-	cpu := &CPU{}
+	cpu := &cpu{}
 
-	t.Run("Read flags", func(t *testing.T) {
+	t.Run("Read flags", func(_ *testing.T) {
 		cpu.af.val = 0b10010010
 
 		assert.True(cpu.C(), "Error reading C flag")
@@ -27,12 +27,12 @@ func TestCPU(t *testing.T) {
 		assert.False(cpu.Z(), "Error reading Z flag")
 	})
 
-	t.Run("Set flags", func(t *testing.T) {
+	t.Run("Set flags", func(_ *testing.T) {
 		cpu.af.val = 0
-		cpu.setC(true)
-		cpu.setH(true)
-		cpu.setN(true)
-		cpu.setZ(true)
+		cpu.SetC(true)
+		cpu.SetH(true)
+		cpu.SetN(true)
+		cpu.SetZ(true)
 
 		assert.True(cpu.C(), "Unable to turn on C flag")
 		assert.True(cpu.H(), "Unable to turn on H flag")
@@ -40,10 +40,10 @@ func TestCPU(t *testing.T) {
 		assert.True(cpu.Z(), "Unable to turn on Z flag")
 
 		cpu.af.val = 0xff
-		cpu.setC(false)
-		cpu.setH(false)
-		cpu.setN(false)
-		cpu.setZ(false)
+		cpu.SetC(false)
+		cpu.SetH(false)
+		cpu.SetN(false)
+		cpu.SetZ(false)
 
 		assert.False(cpu.C(), "Unable to turn off C flag")
 		assert.False(cpu.H(), "Unable to turn off H flag")

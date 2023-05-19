@@ -1,4 +1,4 @@
-package main
+package gameboy
 
 import (
 	"errors"
@@ -13,9 +13,9 @@ type blarggTest struct {
 }
 
 func (bt *blarggTest) run() error {
-	gb := NewGameboy()
+	gb := New()
 
-	path := fmt.Sprintf("rom/%s", bt.name)
+	path := fmt.Sprintf("../../rom/%s", bt.name)
 	err := gb.LoadRom(path)
 	if err != nil {
 		return err

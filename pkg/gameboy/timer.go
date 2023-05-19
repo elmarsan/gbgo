@@ -1,40 +1,42 @@
-package main
+package gameboy
+
+import "github.com/elmarsan/gbgo/pkg/bit"
 
 const (
 	// Divider register
-	DIV = 0xff04
+	div = 0xff04
 
 	// Timer counter
-	TIMA = 0xff05
+	tima = 0xff05
 
 	// Timer module
-	TMA = 0xff06
+	tma = 0xff06
 
 	// Timer control
-	TAC = 0xff07
+	tac = 0xff07
 )
 
-// Timer represents the timer hardware in the Game Boy console.
-type Timer struct {
+// timer represents the timer hardware in the Game Boy console.
+type timer struct {
 	clockCycles uint
 
 	// memoryBus represents memory memoryBus used by Gameboy.
-	memoryBus *MemoryBus
+	memoryBus *memoryBus
 
 	// InterruptBus represents the interruption system of game boy.
-	interruptBus *InterruptBus
+	interruptBus *interruptBus
 }
 
-// NewTimer returns new instance of Game boy timer.
-func NewTimer(memoryBus *MemoryBus, irBus *InterruptBus) *Timer {
-	return &Timer{
+// newTimer returns new instance of Game boy timer.
+func newTimer(memoryBus *memoryBus, irBus *interruptBus) *timer {
+	return &timer{
 		memoryBus:    memoryBus,
 		interruptBus: irBus,
 	}
 }
 
 // Tick updates the timer with the given number of clock cycles.
-func (t *Timer) Tick(clockCycles int) {
+func (t *timer) tick(clockCycles int) {
 	// increment the divider register based on the number of cycles passed
 	t.incDiv(clockCycles)
 
@@ -52,44 +54,44 @@ func (t *Timer) Tick(clockCycles int) {
 }
 
 // incDiv increments the divider register based on the given number of cycles.
-func (t *Timer) incDiv(cycles int) {
-	div := t.memoryBus.read(DIV)
-	inc := int(div) + cycles
+func (t *timer) incDiv(cycles int) {
+	divVal := t.memoryBus.read(div)
+	inc := int(divVal) + cycles
 
 	if inc > 0xff {
-		t.memoryBus.io[DIV-IO_START] = 1
+		t.memoryBus.io[div-ioStart] = 1
 	} else {
-		t.memoryBus.io[DIV-IO_START] = uint8(inc)
+		t.memoryBus.io[div-ioStart] = uint8(inc)
 	}
 }
 
 // incTIMA increments the timer counter and handles overflow.
-func (t *Timer) incTIMA() {
-	inc := uint16(t.memoryBus.read(TIMA)) + 1
+func (t *timer) incTIMA() {
+	inc := uint16(t.memoryBus.read(tima)) + 1
 
 	if inc > 0xff {
-		t.interruptBus.request(IT_TIMER)
-		tma := t.memoryBus.read(TMA)
-		t.memoryBus.write(TIMA, tma)
+		t.interruptBus.request(timerInterrupt)
+		tma := t.memoryBus.read(tma)
+		t.memoryBus.write(tima, tma)
 	} else {
-		t.memoryBus.write(TIMA, uint8(inc))
+		t.memoryBus.write(tima, uint8(inc))
 	}
 }
 
-// resetDIV resets the divider register to 0.
-func (t *Timer) resetDIV() {
-	t.memoryBus.write(DIV, 0)
+// ResetDIV resets the divider register to 0.
+func (t *timer) resetDIV() {
+	t.memoryBus.write(div, 0)
 }
 
 // tacEnabled returns whether the timer is enabled.
-func (t *Timer) tacEnabled() bool {
-	tac := t.memoryBus.read(TAC)
-	return isBitSet(tac, 2)
+func (t *timer) tacEnabled() bool {
+	tac := t.memoryBus.read(tac)
+	return bit.IsSet(tac, 2)
 }
 
 // clockFreq returns the clock frequency of the timer.
-func (t *Timer) clockFreq() int {
-	tac := t.memoryBus.read(TAC)
+func (t *timer) clockFreq() int {
+	tac := t.memoryBus.read(tac)
 
 	clock := tac & 0x03
 	switch clock {

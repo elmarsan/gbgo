@@ -1,4 +1,6 @@
-package main
+package gameboy
+
+import "github.com/elmarsan/gbgo/pkg/bit"
 
 // Joypad represents Gameboy input controller.
 // It holds which keys are down/up.
@@ -16,8 +18,8 @@ type Joypad struct {
 	selectDirectionBtn bool
 }
 
-// JOYP represents Joypad register
-const JOYP = 0xff00
+// joyp represents Joypad register
+const joyp = 0xff00
 
 // Get returns uint8 value indicating which keys are currently pressed.
 func (j *Joypad) Get() uint8 {
@@ -25,37 +27,37 @@ func (j *Joypad) Get() uint8 {
 
 	if j.selectActionBtn {
 		if j.Start {
-			state = clearBit(state, 3)
+			state = bit.Clear(state, 3)
 		}
 
 		if j.Select {
-			state = clearBit(state, 2)
+			state = bit.Clear(state, 2)
 		}
 
 		if j.B {
-			state = clearBit(state, 1)
+			state = bit.Clear(state, 1)
 		}
 
 		if j.A {
-			state = clearBit(state, 0)
+			state = bit.Clear(state, 0)
 		}
 	}
 
 	if j.selectDirectionBtn {
 		if j.Down {
-			state = clearBit(state, 3)
+			state = bit.Clear(state, 3)
 		}
 
 		if j.Up {
-			state = clearBit(state, 2)
+			state = bit.Clear(state, 2)
 		}
 
 		if j.Left {
-			state = clearBit(state, 1)
+			state = bit.Clear(state, 1)
 		}
 
 		if j.Right {
-			state = clearBit(state, 0)
+			state = bit.Clear(state, 0)
 		}
 	}
 
@@ -64,6 +66,6 @@ func (j *Joypad) Get() uint8 {
 
 // Set indicates whether an action or direction key is pressed.
 func (j *Joypad) Set(val uint8) {
-	j.selectActionBtn = !isBitSet(val, 5)
-	j.selectDirectionBtn = !isBitSet(val, 4)
+	j.selectActionBtn = !bit.IsSet(val, 5)
+	j.selectDirectionBtn = !bit.IsSet(val, 4)
 }

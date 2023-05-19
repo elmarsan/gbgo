@@ -1,4 +1,4 @@
-package main
+package gameboy
 
 import (
 	"bytes"
@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-type CartridgeHeader struct {
+type cartridgeHeader struct {
 	entry          [4]uint8
 	logo           [0x30]uint8
 	title          string
@@ -23,11 +23,11 @@ type CartridgeHeader struct {
 	globalChecksum uint16
 }
 
-type Cartridge struct {
+type cartridge struct {
 	fname  string
 	size   uint32
 	data   []uint8
-	header *CartridgeHeader
+	header *cartridgeHeader
 }
 
 var licenseCodes = [0xa5]string{
@@ -125,7 +125,7 @@ var catridgeTypes = [0x100]string{
 	0xff: "HuC1+RAM+BATTERY",
 }
 
-func (c Cartridge) getType() string {
+func (c cartridge) getType() string {
 	cartridgeType := catridgeTypes[c.header.catridgeType]
 
 	if cartridgeType != "" {
@@ -135,7 +135,7 @@ func (c Cartridge) getType() string {
 	return fmt.Sprintf("Unknown cartridge type (0x%d)", c.header.catridgeType)
 }
 
-func (c *Cartridge) load(p string) error {
+func (c *cartridge) load(p string) error {
 	d, err := os.ReadFile(p)
 	if err != nil {
 		return err
@@ -146,7 +146,7 @@ func (c *Cartridge) load(p string) error {
 	copy(data, d)
 	c.data = data
 
-	c.header = &CartridgeHeader{}
+	c.header = &cartridgeHeader{}
 
 	b := bytes.NewBuffer(d)
 
@@ -169,6 +169,6 @@ func (c *Cartridge) load(p string) error {
 	return nil
 }
 
-func (c *Cartridge) read(addr uint16) uint8 {
+func (c *cartridge) read(addr uint16) uint8 {
 	return c.data[addr]
 }
