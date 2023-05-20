@@ -106,13 +106,13 @@ func (ppu *ppu) tick(clockCycles int) {
 			if ppu.scanline == 144 {
 				ppu.updateStatusMode(vblank)
 
-				stat := ppu.memoryBus.read(stat)
-				if bit.IsSet(stat, 4) {
+				statVal := ppu.memoryBus.read(stat)
+				if bit.IsSet(statVal, 4) {
 					ppu.interruptBus.request(lcdStatInterrupt)
 				}
 			} else {
-				stat := ppu.memoryBus.read(stat)
-				if bit.IsSet(stat, 5) {
+				statVal := ppu.memoryBus.read(stat)
+				if bit.IsSet(statVal, 5) {
 					ppu.interruptBus.request(lcdStatInterrupt)
 				}
 			}
@@ -143,8 +143,8 @@ func (ppu *ppu) tick(clockCycles int) {
 			ppu.statusClockCycles -= 4560
 			ppu.updateStatusMode(oamScan)
 
-			stat := ppu.memoryBus.read(stat)
-			if bit.IsSet(stat, 5) {
+			statVal := ppu.memoryBus.read(stat)
+			if bit.IsSet(statVal, 5) {
 				ppu.interruptBus.request(lcdStatInterrupt)
 			}
 		}
@@ -162,8 +162,8 @@ func (ppu *ppu) tick(clockCycles int) {
 			ppu.renderScanline()
 			ppu.updateStatusMode(hblank)
 
-			stat := ppu.memoryBus.read(stat)
-			if bit.IsSet(stat, 3) {
+			statVal := ppu.memoryBus.read(stat)
+			if bit.IsSet(statVal, 3) {
 				ppu.interruptBus.request(lcdStatInterrupt)
 			}
 		}
@@ -181,7 +181,7 @@ func (ppu *ppu) updateStatusMode(mode int) {
 	if mode == vblank {
 		ppu.vblankLine = 0
 		ppu.vBlankClockCycles = ppu.statusClockCycles
-		ppu.interruptBus.request(lcdStatInterrupt)
+		ppu.interruptBus.request(vblankInterrupt)
 	}
 }
 

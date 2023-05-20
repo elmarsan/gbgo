@@ -32,7 +32,7 @@ func NewApp(emu *emulator.Emulator) *App {
 			ebiten.KeyArrowLeft:  func(down bool) { emu.SetButton(emulator.LeftBtn, down) },
 			ebiten.KeyArrowRight: func(down bool) { emu.SetButton(emulator.RightBtn, down) },
 			ebiten.KeySpace:      func(down bool) { emu.SetButton(emulator.SelectBtn, down) },
-			ebiten.KeyK:          func(down bool) { emu.SetButton(emulator.StartBtn, down) },
+			ebiten.KeyEnter:      func(down bool) { emu.SetButton(emulator.StartBtn, down) },
 			ebiten.KeyA:          func(down bool) { emu.SetButton(emulator.ABtn, down) },
 			ebiten.KeyB:          func(down bool) { emu.SetButton(emulator.BBtn, down) },
 		},
