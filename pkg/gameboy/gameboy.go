@@ -47,8 +47,6 @@ func New() *Gameboy {
 
 	timer := newTimer(memoryBus, interruptBus)
 
-	debug.init()
-
 	return &Gameboy{
 		paused:       false,
 		stopCh:       make(chan struct{}),
@@ -120,8 +118,6 @@ func (gb *Gameboy) step() {
 
 // execute fetchs next opcode and executes the corresponding instruction.
 func (gb *Gameboy) execute() {
-	// debug.logState(gb)
-
 	gb.cpu.clockCycles = 0
 	pc := gb.cpu.ReadPc()
 	opcode := gb.memoryBus.read(pc)

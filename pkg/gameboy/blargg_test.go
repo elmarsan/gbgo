@@ -97,6 +97,10 @@ func TestBlargg(t *testing.T) {
 			name:     "11-op a,(hl).gb",
 			targetPc: 0xcc62,
 		},
+		{
+			name:     "instr_timing.gb",
+			targetPc: 0x0018,
+		},
 	}
 
 	for _, test := range tests {
